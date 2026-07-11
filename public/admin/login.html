@@ -220,7 +220,10 @@
       <input type="email" id="email" placeholder="admin@restaurant.com" required autocomplete="username" />
 
       <label>Password</label>
-      <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+      <div style="position: relative; margin-bottom: 20px;">
+        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 40px; margin-bottom: 0;" />
+        <i class="hgi hgi-stroke hgi-view" id="togglePassword" style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--c-muted); font-size: 20px;"></i>
+      </div>
 
       <button class="btn" type="submit" id="loginBtn">Sign In</button>
     </form>
@@ -258,6 +261,20 @@
       } finally {
         btn.disabled = false;
         btn.textContent = 'Sign In';
+      }
+    });
+
+    // Toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function () {
+      const pwd = document.getElementById('password');
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        this.classList.remove('hgi-view');
+        this.classList.add('hgi-view-off');
+      } else {
+        pwd.type = 'password';
+        this.classList.remove('hgi-view-off');
+        this.classList.add('hgi-view');
       }
     });
 

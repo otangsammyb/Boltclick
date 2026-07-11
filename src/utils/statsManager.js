@@ -28,17 +28,40 @@ class StatsManager {
 
       // Step 2: If the date has changed (or first run), perform rollover reset
       if (!stats) {
+        // Deep clone to avoid mutating the passed object in loops or retries
+        const rolloverUpdate = JSON.parse(JSON.stringify(updateParams));
+        
+        rolloverUpdate.$set = rolloverUpdate.$set || {};
+        rolloverUpdate.$set.lastDate = today;
+
+        // Base values after daily reset
+        let todayOrdersVal = 0;
+        let todayRevenueVal = 0;
+
+        // Extract todayOrders and todayRevenue from $inc and move them to $set
+        // Since we are resetting, the $inc value essentially becomes the new $set value.
+        if (rolloverUpdate.$inc) {
+          if (rolloverUpdate.$inc.todayOrders !== undefined) {
+             todayOrdersVal = rolloverUpdate.$inc.todayOrders;
+             delete rolloverUpdate.$inc.todayOrders;
+          }
+          if (rolloverUpdate.$inc.todayRevenue !== undefined) {
+             todayRevenueVal = rolloverUpdate.$inc.todayRevenue;
+             delete rolloverUpdate.$inc.todayRevenue;
+          }
+          
+          // Remove $inc completely if empty to prevent MongoDB empty object error
+          if (Object.keys(rolloverUpdate.$inc).length === 0) {
+            delete rolloverUpdate.$inc;
+          }
+        }
+
+        rolloverUpdate.$set.todayOrders = todayOrdersVal;
+        rolloverUpdate.$set.todayRevenue = todayRevenueVal;
+
         stats = await DashboardStats.findOneAndUpdate(
           { _id: 'global_stats' },
-          {
-            ...updateParams,
-            $set: { 
-              ...(updateParams.$set || {}), 
-              lastDate: today, 
-              todayOrders: 0, 
-              todayRevenue: 0 
-            }
-          },
+          rolloverUpdate,
           { upsert: true, new: true }
         );
       }

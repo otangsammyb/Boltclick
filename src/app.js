@@ -187,6 +187,11 @@ app.get('/api/config', (req, res) => {
 
 // Routes moved up for performance optimization
 
+// ── Root Redirect ─────────────────────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.redirect(301, '/admin');
+});
+
 // ── SPA fallbacks ─────────────────────────────────────────────────────────────
 app.get('/admin/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/admin/index.html'));

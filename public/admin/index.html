@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — RestaurantBot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+  <script type="text/javascript" src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+</head>
+
+<body>
+
+  <!-- ── Sidebar ────────────────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img id="sidebarLogo" src="" alt=""
+        style="height:34px;width:34px;object-fit:cover;border-radius:8px;display:none;flex-shrink:0;" />
+      <span class="logo-icon" id="sidebarDefaultIcon"><i class="hgi hgi-stroke hgi-restaurant-01"></i></span>
+      <span class="logo-text">ORA WELLNESS</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-dashboard-square-01"></i></span><span>Dashboard</span>
+      </a>
+      <a href="#" class="nav-item" data-page="orders">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-shopping-bag-01"></i></span><span>Orders</span>
+        <span class="badge" id="ordersBadge">0</span>
+      </a>
+      <a href="#" class="nav-item" data-page="menu">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-menu-restaurant"></i></span><span>Menu</span>
+      </a>
+      <a href="#" class="nav-item" data-page="bookings">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-calendar-add-01"></i></span><span>Bookings</span>
+      </a>
+      <a href="#" class="nav-item" data-page="delivery">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-delivery-truck-01"></i></span><span>Delivery</span>
+      </a>
+      <a href="#" class="nav-item" data-page="customers">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-user-group"></i></span><span>Customers</span>
+      </a>
+      <a href="#" class="nav-item" data-page="drivers">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-motorbike-01"></i></span><span>Drivers</span>
+      </a>
+      <a href="#" class="nav-item" data-page="analytics">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-analytics-01"></i></span><span>Analytics</span>
+      </a>
+      <a href="#" class="nav-item" data-page="qrcodes">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-qr-code"></i></span><span>QR Codes</span>
+      </a>
+      <a href="#" class="nav-item" data-page="handoffs">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-customer-service-01"></i></span><span>Handoffs</span>
+        <span class="badge badge-warn" id="handoffBadge">0</span>
+      </a>
+      <a href="#" class="nav-item" data-page="settings">
+        <span class="nav-icon"><i class="hgi hgi-stroke hgi-settings-01"></i></span><span>Settings</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" id="logoutBtn" style="background-color: green; border: 1px solid green; color: white;">
+        <i class="hgi hgi-stroke hgi-logout-04" style="font-size:16px;vertical-align:middle;"></i>
+        <span style="vertical-align:middle;"> Logout</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ─────────────────────────────────────────────────────────── -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="top-bar">
+      <button class="menu-toggle" id="menuToggle"><i class="hgi hgi-stroke hgi-menu-01"></i></button>
+      <div class="top-bar-title" id="pageTitle">Dashboard</div>
+      <div class="top-bar-right">
+        <div id="themeToggle" class="theme-toggle-btn" title="Toggle Light/Dark Mode">
+          <i class="hgi hgi-stroke hgi-moon-01" id="themeIcon"></i>
+        </div>
+        <div class="live-dot"></div>
+        <span class="live-label">Live</span>
+        <div class="avatar-menu">
+          <div class="admin-avatar" title="Admin Menu">A</div>
+          <div class="avatar-dropdown">
+            <div class="avatar-dropdown-header">
+              <div class="admin-avatar" style="width:36px;height:36px;font-size:15px;">A</div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:var(--text)">Administrator</div>
+                <div style="font-size:11px;color:var(--muted)">Admin Panel</div>
+              </div>
+            </div>
+            <div class="avatar-dropdown-divider"></div>
+            <button class="avatar-dropdown-item" id="avatarSettingsBtn">
+              <i class="hgi hgi-stroke hgi-settings-01"></i><span>Settings</span>
+            </button>
+            <div class="avatar-dropdown-divider"></div>
+            <button class="avatar-dropdown-item avatar-dropdown-danger" id="avatarLogoutBtn">
+              <i class="hgi hgi-stroke hgi-logout-04"></i><span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Pages -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Stat cards -->
+      <div class="stats-grid">
+        <div class="stat-card stat-green">
+          <div class="stat-icon"><i class="hgi hgi-stroke hgi-money-01"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Revenue Today</div>
+            <div class="stat-value" id="statTodayRevenue">0</div>
+            <div class="stat-sub" id="statTotalRevenue">Total: 0 FCFA</div>
+          </div>
+        </div>
+        <div class="stat-card stat-teal">
+          <div class="stat-icon"><i class="hgi hgi-stroke hgi-shopping-cart-01"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Orders Today</div>
+            <div class="stat-value" id="statTodayOrders">0</div>
+            <div class="stat-sub" id="statPendingOrders">0 pending</div>
+          </div>
+        </div>
+        <div class="stat-card stat-dark">
+          <div class="stat-icon"><i class="hgi hgi-stroke hgi-user-group"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Total Customers</div>
+            <div class="stat-value" id="statCustomers">0</div>
+          </div>
+        </div>
+        <div class="stat-card stat-accent">
+          <div class="stat-icon"><i class="hgi hgi-stroke hgi-star"></i></div>
+          <div class="stat-info">
+            <div class="stat-label">Avg Rating</div>
+            <div class="stat-value" id="statRating">0.0</div>
+            <div class="stat-sub" id="statBookings">0 active bookings</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Revenue (7 days)</h3>
+            <select id="revenueRange" class="chart-select">
+              <option value="7">7 days</option>
+              <option value="30">30 days</option>
+            </select>
+          </div>
+          <canvas id="revenueChart" height="200"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Popular Items</h3>
+          </div>
+          <canvas id="itemsChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Recent orders live feed -->
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Live Orders</h3>
+          <span class="pulse-dot"></span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="liveOrdersTable">
+            <thead>
+              <tr>
+                <th class="ref">Ref</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody id="liveOrdersBody">
+              <tr>
+                <td colspan="6" class="empty-row">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /page-dashboard -->
+
+    <!-- ORDERS PAGE -->
+    <div class="page" id="page-orders">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>All Orders</h3>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="text" id="orderSearchRef" placeholder="Search Reference..."
+              style="padding:6px 10px; border:1px solid var(--border); border-radius:4px; background:var(--dark); color:var(--text); width: 170px;">
+            <button class="btn-sm btn-outline" id="btnSearchOrder"
+              style="padding:6px 12px; height:auto;">Search</button>
+            <select id="orderStatusFilter" class="chart-select" style="margin-bottom:0;">
+              <option value="">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="PAID">Paid</option>
+              <option value="PREPARING">Preparing</option>
+              <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th class="ref">Ref</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Type</th>
+                <th>Payment</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="ordersBody">
+              <tr>
+                <td colspan="8" class="empty-row">Loading...</td>
+              </tr>
+          </table>
+          <div id="ordersPagination"
+            style="display: flex; justify-content: space-between; align-items: center; padding: 15px; border-top: 1px solid var(--border);">
+            <button class="btn-sm btn-outline" id="btnOrdersPrev">Previous</button>
+            <span id="ordersPageInfo" style="font-size: 13px; color: var(--muted);">Page 1</span>
+            <button class="btn-sm btn-outline" id="btnOrdersNext">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MENU PAGE -->
+    <div class="page" id="page-menu">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Menu Items</h3>
+          <button class="btn-primary" id="addMenuItemBtn"><i class="hgi hgi-stroke hgi-add-01"
+              style="font-size: 14px; vertical-align: middle; margin-right: 4px"></i> Add Item</button>
+        </div>
+        <div id="menuGrid" class="menu-grid"></div>
+      </div>
+
+      <!-- Add/Edit Modal -->
+      <div class="modal-overlay" id="menuModal">
+        <div class="modal">
+          <div class="modal-header">
+            <h3 id="modalTitle">Add Menu Item</h3>
+            <button class="modal-close" id="modalClose"><i class="hgi hgi-stroke hgi-cancel-01"></i></button>
+          </div>
+          <form id="menuForm" enctype="multipart/form-data">
+            <input type="hidden" id="menuItemId" />
+            <div class="form-row">
+              <div class="form-group">
+                <label>Name (English)</label>
+                <input type="text" id="nameEn" required placeholder="e.g. Ndolé" />
+              </div>
+              <div class="form-group">
+                <label>Nom (Français)</label>
+                <input type="text" id="nameFr" required placeholder="ex. Ndolé" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Description (EN)</label>
+                <input type="text" id="descriptionEn" placeholder="Optional description" />
+              </div>
+              <div class="form-group">
+                <label>Description (FR)</label>
+                <input type="text" id="descriptionFr" placeholder="Description optionnelle" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Price (FCFA)</label>
+                <input type="number" id="price" required min="0" placeholder="2500" />
+              </div>
+              <div class="form-group">
+                <label>Category</label>
+                <input type="text" id="category" placeholder="Main, Drink, Dessert..." />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Image</label>
+              <input type="file" id="menuImage" accept="image/*" />
+            </div>
+            <button type="submit" class="btn-primary" style="width:100%;margin-top:8px">Save Item</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOOKINGS PAGE -->
+    <div class="page" id="page-bookings">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Table Bookings</h3>
+          <div class="availability-pill" id="availabilityPill">Loading…</div>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Guests</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsBody">
+              <tr>
+                <td colspan="6" class="empty-row">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS PAGE -->
+    <div class="page" id="page-customers">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Customer Directory</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Phone Number</th>
+                <th>Language</th>
+                <th>Total Orders</th>
+                <th>Total Spent</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody id="customersBody">
+              <tr>
+                <td colspan="5" class="empty-row">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELIVERY PAGE -->
+    <div class="page" id="page-delivery">
+      <div class="section-card" style="margin-bottom: 20px;">
+        <div class="section-header">
+          <h3>Live Driver Tracking</h3>
+        </div>
+        <div id="adminDeliveryMap" style="height: 400px; width: 100%; border-radius: 8px; z-index: 1;"></div>
+      </div>
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Delivery Groups</h3>
+        </div>
+        <div id="deliveryGroups" class="delivery-grid"></div>
+      </div>
+    </div>
+
+    <!-- DRIVERS PAGE -->
+    <div class="page" id="page-drivers">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Authorized Drivers</h3>
+          <button class="btn-primary" id="addDriverBtn"><i class="hgi hgi-stroke hgi-add-01"
+              style="font-size: 14px; vertical-align: middle; margin-right: 4px"></i> Add Driver</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Rider ID</th>
+                <th>Login Code</th>
+                <th>Phone</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="driversBody">
+              <tr>
+                <td colspan="5" class="empty-row">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Driver Modal -->
+      <div class="modal-overlay" id="driverModal">
+        <div class="modal" style="max-width: 400px;">
+          <div class="modal-header">
+            <h3>Add New Driver</h3>
+            <button class="modal-close" id="modalClose"><i class="hgi hgi-stroke hgi-cancel-01"></i></button>
+          </div>
+          <form id="driverForm">
+            <div class="form-group">
+              <label>Driver Name</label>
+              <input type="text" id="driverName" required placeholder="e.g. John Doe" />
+            </div>
+            <div class="form-group">
+              <label>Rider ID (Uppercase)</label>
+              <input type="text" id="riderId" required placeholder="e.g. RIDER1" />
+            </div>
+            <div class="form-group">
+              <label>Phone Number (Optional)</label>
+              <input type="text" id="driverPhone" placeholder="+237..." />
+            </div>
+            <p style="font-size: 11px; color: var(--muted); margin-bottom: 15px;">
+              The Login Code will be <strong>DRIVER_{RIDER_ID}</strong>
+            </p>
+            <button type="submit" class="btn-primary" style="width:100%">Authorized Driver</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS PAGE -->
+    <div class="page" id="page-analytics">
+      <div class="section-card" style="margin-bottom: 20px;">
+        <div class="section-header" style="justify-content: space-between; align-items: center;">
+          <h3>Performance Reports</h3>
+          <div style="display: flex; gap: 10px;">
+            <button id="btnReportdaily" onclick="downloadReport('daily')" class="btn-primary"><i
+                class="hgi hgi-stroke hgi-document-download-01" style="margin-right:4px;"></i>Daily Report</button>
+            <button id="btnReportmonthly" onclick="downloadReport('monthly')" class="btn-outline"><i
+                class="hgi hgi-stroke hgi-document-download-01" style="margin-right:4px;"></i>Monthly Report</button>
+          </div>
+        </div>
+        <div style="padding: 0 20px 20px; font-size: 13px; color: var(--muted);">
+          Generate comprehensive PDF reports containing revenue, fulfillment breakdown, and popular item stats
+          customized with your branding.
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card" style="flex:1 1 100%">
+          <div class="chart-header">
+            <h3>Ratings Distribution</h3>
+          </div>
+          <canvas id="ratingsChart" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- HANDOFFS PAGE -->
+    <div class="page" id="page-handoffs">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Human Handoffs</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Requested</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="handoffsBody">
+              <tr>
+                <td colspan="4" class="empty-row">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR CODES PAGE -->
+    <div class="page" id="page-qrcodes">
+      <div class="section-card no-print">
+        <div class="section-header">
+          <h3>Custom QR Code Generator</h3>
+        </div>
+        <div style="padding: 20px;">
+          <form id="qrForm" class="form-row" style="align-items: flex-end; gap: 15px; margin-bottom: 20px;">
+            <div class="form-group" style="flex: 1;">
+              <label>Number of Tables (Generate)</label>
+              <input type="number" id="qrTableCount" min="1" max="100" value="10" required />
+            </div>
+            <div class="form-group" style="flex: 2;">
+              <label>Center Logo (Optional)</label>
+              <input type="file" id="qrLogoUpload" accept="image/*" />
+            </div>
+            <button type="submit" class="btn-primary" id="btnGenerateSave"
+              style="height: 44px; padding: 0 28px; background-color: green; border: 1px solid green; color: white; border-radius: 10px;">Generate & Save</button>
+            <button type="button" class="btn-outline" id="printQrBtn"
+              style="height: 44px; padding: 0 28px; display:none; background-color: #2563eb; border: 1px solid #2563eb; color: white; border-radius: 10px;">Print All</button>
+          </form>
+          <div style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">
+            QR Codes will pre-fill WhatsApp with the text <strong>"Order for Table X"</strong> and automatically save to
+            the system.
+          </div>
+        </div>
+      </div>
+
+      <!-- Print container / Saved Grid -->
+      <div class="section-card">
+        <div class="section-header no-print">
+          <h3>Saved QR Codes</h3>
+        </div>
+        <div id="qrPrintArea" class="qr-print-grid" style="padding: 20px;"></div>
+      </div>
+    </div>
+    <!-- SETTINGS PAGE -->
+    <div class="page" id="page-settings">
+      <div class="section-card">
+        <div class="section-header">
+          <h3>Restaurant Branding</h3>
+        </div>
+        <div style="padding: 24px;">
+          <!-- Current Logo Preview -->
+          <div
+            style="display:flex;align-items:center;gap:24px;margin-bottom:32px;padding:20px;background:var(--dark);border:1px solid var(--border);border-radius:12px;">
+            <div style="position:relative;">
+              <img id="settingsLogoPreview" src="" alt="Restaurant Logo"
+                style="width:100px;height:100px;object-fit:cover;border-radius:12px;border:2px solid var(--border);display:none;" />
+              <div id="settingsLogoPlaceholder"
+                style="width:100px;height:100px;border-radius:12px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:32px;">
+                <i class="hgi hgi-stroke hgi-image-01"></i>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;">Restaurant Logo</div>
+              <div style="font-size:13px;color:var(--muted);max-width:340px;">This logo will appear in the header of the
+                Admin Dashboard next to the restaurant name. It is also used as the center image on generated QR codes.
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload Form -->
+          <form id="logoUploadForm" style="display:flex;flex-direction:column;gap:16px;max-width:480px;">
+            <div class="form-group">
+              <label
+                style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;display:block;">Upload
+                New Logo</label>
+              <input type="file" id="logoFileInput" accept="image/*" required
+                style="background:var(--dark);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);width:100%;cursor:pointer;" />
+              <p style="font-size:11px;color:var(--muted);margin-top:6px;">Recommended: square image, PNG or JPG,
+                minimum 256×256px.</p>
+            </div>
+            <div style="display:flex;gap:12px;margin-top:4px;">
+              <button type="submit" class="btn-primary" id="logoUploadBtn"
+                style="width:auto;padding:12px 28px;height:44px;display:inline-flex;align-items:center;gap:9px;font-size:14px;border-radius:10px;">
+                <i class="hgi hgi-stroke hgi-cloud-upload" style="font-size:18px;"></i>
+                <span>Upload Logo</span>
+              </button>
+              <button type="button" id="logoRemoveBtn" class="btn-outline"
+                style="width:auto;padding:12px 24px;height:44px;color:var(--red);border-color:rgba(255,82,82,.4);display:none;align-items:center;gap:9px;font-size:14px;border-radius:10px;">
+                <i class="hgi hgi-stroke hgi-delete-02" style="font-size:18px;"></i>
+                <span>Remove Logo</span>
+              </button>
+            </div>
+            <div id="logoUploadMsg" style="font-size:13px;display:none;"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/dashboard.js"></script>
+</body>
+
+</html>

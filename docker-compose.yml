@@ -1,0 +1,154 @@
+version: '3.9'
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  docker-compose.yml — PRODUCTION
+#  Self-hosted MongoDB (no Atlas fees) + App + Nginx
+#  Usage:
+#    docker compose --env-file .env up -d
+#    docker compose --env-file .env up -d --scale app=4   # scale app workers
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ─── Application Server ─────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: restaurant-bot:latest
+    container_name: restaurant_bot_app
+    restart: unless-stopped
+    expose:
+      - "3000"               # internal only — nginx proxies from outside
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://botuser:${MONGO_BOT_PASSWORD}@mongo:27017/restaurant_bot?authSource=restaurant_bot
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/public/uploads
+      - receipts_data:/app/public/receipts
+      - logs_data:/app/logs
+    networks:
+      - bot_network
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─── MongoDB (self-hosted, zero Atlas fees) ──────────────────────────────────
+  mongo:
+    image: mongo:7.0
+    container_name: restaurant_bot_mongo
+    restart: unless-stopped
+    # Never expose port 27017 to public internet
+    expose:
+      - "27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: restaurant_bot
+    volumes:
+      - mongo_data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - mongo_config:/data/configdb
+    networks:
+      - bot_network
+    command: >
+      mongod
+      --wiredTigerCacheSizeGB 0.5
+      --quiet
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh --quiet localhost:27017/restaurant_bot -u root -p ${MONGO_ROOT_PASSWORD} --authenticationDatabase admin
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── Nginx Reverse Proxy ─────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: restaurant_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - bot_network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # ─── Mongo Express (admin UI — dev profile only) ─────────────────────────────
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: restaurant_mongo_express
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8081"   # bind to localhost only!
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${ME_USERNAME:-mongoadmin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${ME_PASSWORD:-changeme}
+    depends_on:
+      - mongo
+    networks:
+      - bot_network
+    profiles:
+      - dev    # only starts with: docker compose --profile dev up
+
+# ─── Named Volumes ────────────────────────────────────────────────────────────
+volumes:
+  mongo_data:
+    driver: local
+  mongo_config:
+    driver: local
+  uploads_data:
+    driver: local
+  receipts_data:
+    driver: local
+  logs_data:
+    driver: local
+  nginx_logs:
+    driver: local
+
+# ─── Networks ─────────────────────────────────────────────────────────────────
+networks:
+  bot_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

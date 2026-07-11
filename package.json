@@ -4,7 +4,7 @@
   "description": "Multi-tenant WhatsApp SalesBot for restaurants (Cameroon)",
   "main": "src/app.js",
   "scripts": {
-    "start": "nodemon src/app.js",
+    "start": "node src/app.js",
     "dev": "nodemon src/app.js",
     "start:prod": "node src/app.js",
     "pm2:start": "pm2 start ecosystem.config.js --env production",

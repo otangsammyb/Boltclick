@@ -174,8 +174,14 @@ app.use('/api/admin', adminRouter);
 app.use('/api/delivery', deliveryRouter);
 app.use('/payments/webhook', campayWebhook);
 
-// ── Health check — dashboard ─────────────────────────────────────────────────
+// ── Health check — dashboard (browser) or JSON probe (Railway/uptime bots) ───
 app.get('/health', (req, res) => {
+  // Railway healthcheck and uptime monitors don't send Accept: text/html
+  // → return a fast, lightweight JSON 200 so the probe always passes
+  if (!req.accepts('html')) {
+    return res.status(200).json({ status: 'ok', uptime: Math.round(process.uptime()), env: nodeEnv });
+  }
+  // Browsers → serve the full status dashboard
   res.sendFile(path.join(__dirname, '../public/health/index.html'));
 });
 

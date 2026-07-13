@@ -162,10 +162,11 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // ── Static files ──────────────────────────────────────────────────────────────
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+app.use('/uploads',  express.static(path.join(__dirname, '../public/uploads')));
 app.use('/receipts', express.static(path.join(__dirname, '../public/receipts')));
-app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+app.use('/admin',    express.static(path.join(__dirname, '../public/admin')));
 app.use('/delivery', express.static(path.join(__dirname, '../public/delivery')));
+app.use('/health',   express.static(path.join(__dirname, '../public/health')));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/webhook', webhookRouter);
@@ -173,9 +174,54 @@ app.use('/api/admin', adminRouter);
 app.use('/api/delivery', deliveryRouter);
 app.use('/payments/webhook', campayWebhook);
 
-// ── Health check ──────────────────────────────────────────────────────────────
+// ── Health check — dashboard ─────────────────────────────────────────────────
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime(), env: nodeEnv });
+  res.sendFile(path.join(__dirname, '../public/health/index.html'));
+});
+
+// ── Health check — JSON API (consumed by the dashboard) ──────────────────────
+app.get('/api/health/status', async (req, res) => {
+  const t0 = Date.now();
+
+  // DB connectivity + latency
+  let dbStatus = 'disconnected';
+  let dbLatency = 0;
+  try {
+    const dbT0 = Date.now();
+    await mongoose.connection.db.admin().ping();
+    dbLatency = Date.now() - dbT0;
+    dbStatus  = 'connected';
+  } catch (_) { /* db unreachable */ }
+
+  // Memory
+  const mem  = process.memoryUsage();
+  const MB   = (b) => Math.round(b / 1024 / 1024);
+  const used = MB(mem.heapUsed);
+  const total = MB(mem.heapTotal);
+
+  const uptimeSecs = process.uptime();
+  const apiLatency = Date.now() - t0;
+
+  res.json({
+    status:      dbStatus === 'connected' ? 'operational' : 'degraded',
+    version:     process.env.npm_package_version || '1.0.0',
+    uptime:      uptimeSecs,
+    environment: nodeEnv,
+    timestamp:   new Date().toISOString(),
+    latency: {
+      db:  dbLatency,
+      api: apiLatency
+    },
+    memory: {
+      used,
+      total,
+      percent: Math.round((used / total) * 100)
+    },
+    db: {
+      status: dbStatus,
+      name:   mongoose.connection.db?.databaseName || 'unknown'
+    }
+  });
 });
 
 // ── Public client config (non-secret keys needed by browser) ─────────────────

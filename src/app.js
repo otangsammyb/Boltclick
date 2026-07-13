@@ -255,17 +255,59 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal server error' });
 });
 
+// ── Health stats helper ───────────────────────────────────────────────────────
+async function buildHealthPayload() {
+  const t0 = Date.now();
+  let dbStatus = 'disconnected', dbLatency = 0;
+  try {
+    const dbT0 = Date.now();
+    await mongoose.connection.db.admin().ping();
+    dbLatency = Date.now() - dbT0;
+    dbStatus  = 'connected';
+  } catch (_) {}
+  const mem   = process.memoryUsage();
+  const MB    = b => Math.round(b / 1024 / 1024);
+  const used  = MB(mem.heapUsed);
+  const total = MB(mem.heapTotal);
+  return {
+    status:      dbStatus === 'connected' ? 'operational' : 'degraded',
+    version:     process.env.npm_package_version || '1.0.0',
+    uptime:      process.uptime(),
+    environment: nodeEnv,
+    timestamp:   new Date().toISOString(),
+    latency:     { db: dbLatency, api: Date.now() - t0 },
+    memory:      { used, total, percent: Math.round((used / total) * 100) },
+    db:          { status: dbStatus, name: mongoose.connection.db?.databaseName || 'unknown' }
+  };
+}
+
 // ── Socket.IO — real-time dashboard updates ───────────────────────────────────
 io.on('connection', (socket) => {
   logger.debug('Dashboard connected: ' + socket.id);
-  
+
   socket.on('driverLocation', (data) => {
-    // Relay to connected Admin interfaces
     io.emit('driverLocationUpdate', data);
+  });
+
+  // Health dashboard requests live stats on connect
+  socket.on('requestHealthStats', async () => {
+    try {
+      const payload = await buildHealthPayload();
+      socket.emit('healthStats', payload);
+    } catch (e) { logger.error('healthStats emit error: ' + e.message); }
   });
 
   socket.on('disconnect', () => logger.debug('Dashboard disconnected: ' + socket.id));
 });
+
+// Broadcast health stats to all connected clients every 5 s
+setInterval(async () => {
+  if (io.engine.clientsCount === 0) return;
+  try {
+    const payload = await buildHealthPayload();
+    io.emit('healthStats', payload);
+  } catch (_) {}
+}, 5000);
 
 // Export io so other modules can emit events
 app.set('io', io);

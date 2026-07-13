@@ -6,26 +6,30 @@
   <title>System Status — Restaurant Bot</title>
   <meta name="description" content="Real-time server health, latency, and changelog for Restaurant WhatsApp Bot" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- HugeIcons — same as the admin app -->
+  <link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+  <!-- Socket.IO — same source as admin app -->
+  <script src="/socket.io/socket.io.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --green:  #22c55e;
-      --amber:  #f59e0b;
-      --red:    #ef4444;
-      --blue:   #3b82f6;
-      --purple: #a855f7;
-      --bg:     #080c14;
+      --green:   #22c55e;
+      --amber:   #f59e0b;
+      --red:     #ef4444;
+      --blue:    #3b82f6;
+      --purple:  #a855f7;
+      --teal:    #14b8a6;
+      --bg:      #080c14;
       --surface: rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.08);
-      --text:   #e2e8f0;
-      --muted:  #64748b;
-      --card-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      --surface2:rgba(255,255,255,0.07);
+      --border:  rgba(255,255,255,0.08);
+      --text:    #e2e8f0;
+      --muted:   #64748b;
     }
 
     html { scroll-behavior: smooth; }
-
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg);
@@ -34,638 +38,569 @@
       overflow-x: hidden;
     }
 
-    /* ── Background mesh ── */
+    /* mesh bg */
     body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0;
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
       background:
-        radial-gradient(ellipse 80% 50% at 20% -10%, rgba(34,197,94,0.08) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(59,130,246,0.07) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 30% at 50% 50%, rgba(168,85,247,0.04) 0%, transparent 70%);
-      pointer-events: none;
+        radial-gradient(ellipse 80% 50% at 15% -5%,  rgba(34,197,94,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 85% 110%, rgba(59,130,246,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 50% 55%,  rgba(168,85,247,0.04) 0%, transparent 70%);
     }
-
-    /* ── Grid overlay ── */
     body::after {
-      content: '';
-      position: fixed; inset: 0; z-index: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
       background-size: 40px 40px;
-      pointer-events: none;
     }
 
-    .container { position: relative; z-index: 1; max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 0 24px 64px; }
 
-    /* ── Top Banner ── */
-    .top-banner {
-      padding: 12px 0;
-      display: flex; align-items: center; justify-content: center; gap: 12px;
-      border-bottom: 1px solid var(--border);
+    /* ── Top bar ── */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
       font-size: 13px; color: var(--muted);
-      letter-spacing: 0.05em;
     }
-    .logo-mark { font-size: 18px; }
-    .banner-brand { font-weight: 600; color: var(--text); letter-spacing: 0; }
+    .topbar-left { display: flex; align-items: center; gap: 10px; }
+    .topbar-icon { font-size: 20px; color: var(--green); }
+    .topbar-brand { font-weight: 700; color: var(--text); font-size: 14px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .live-chip {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 999px; padding: 4px 12px; font-size: 12px; font-weight: 600;
+      color: var(--green); letter-spacing: 0.03em;
+    }
+    .live-dot-sm {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+      animation: blink 1.4s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
     /* ── Header ── */
-    header {
-      padding: 56px 0 40px;
-      text-align: center;
-    }
+    header { padding: 48px 0 32px; text-align: center; }
     .status-pill {
       display: inline-flex; align-items: center; gap: 8px;
-      padding: 6px 16px; border-radius: 999px;
-      font-size: 13px; font-weight: 500; letter-spacing: 0.02em;
-      margin-bottom: 24px;
-      transition: all 0.3s;
+      padding: 6px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      letter-spacing: 0.02em; margin-bottom: 22px; transition: all .35s;
     }
-    .status-pill.operational {
-      background: rgba(34,197,94,0.12);
-      border: 1px solid rgba(34,197,94,0.3);
-      color: var(--green);
-    }
-    .status-pill.degraded {
-      background: rgba(245,158,11,0.12);
-      border: 1px solid rgba(245,158,11,0.3);
-      color: var(--amber);
-    }
-    .status-pill.outage {
-      background: rgba(239,68,68,0.12);
-      border: 1px solid rgba(239,68,68,0.3);
-      color: var(--red);
-    }
-    .pulse-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: currentColor;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: 0.5; transform: scale(1.4); }
-    }
-    h1 {
-      font-size: clamp(28px, 5vw, 44px);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-bottom: 12px;
-    }
-    h1 span { background: linear-gradient(135deg, var(--green), #4ade80); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .header-sub {
-      color: var(--muted); font-size: 15px;
-      display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap;
-    }
-    .header-sub .sep { opacity: 0.3; }
-    #last-updated { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .s-operational { background: rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:var(--green); }
+    .s-degraded    { background: rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.3); color:var(--amber); }
+    .s-outage      { background: rgba(239,68,68,.12);  border:1px solid rgba(239,68,68,.3);  color:var(--red); }
+    .pulse { width:8px; height:8px; border-radius:50%; background:currentColor; animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.5)} }
 
-    /* ── Section titles ── */
-    .section-title {
-      font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--muted);
-      margin: 48px 0 16px;
-    }
+    h1 { font-size: clamp(26px,5vw,42px); font-weight:800; letter-spacing:-.03em; line-height:1.1; margin-bottom:12px; }
+    h1 em { font-style:normal; background:linear-gradient(135deg,var(--green),#4ade80); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .header-meta { display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted); }
+    .sep { opacity:.3; }
+    #ts { font-family:'JetBrains Mono',monospace; font-size:11px; }
 
-    /* ── Metric Cards ── */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
-      margin-bottom: 8px;
+    /* ── Section label ── */
+    .section-label {
+      font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--muted); margin:44px 0 14px; display:flex; align-items:center; gap:8px;
     }
-    .metric-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 24px;
-      backdrop-filter: blur(12px);
-      box-shadow: var(--card-shadow);
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .metric-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
-    }
-    .metric-card::before {
-      content: '';
-      position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent-color, var(--blue)), transparent);
-    }
-    .metric-icon {
-      font-size: 22px; margin-bottom: 12px;
-      display: flex; align-items: center;
-      width: 40px; height: 40px; border-radius: 10px;
-      background: rgba(255,255,255,0.05);
-      justify-content: center;
-    }
-    .metric-label { font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 8px; }
-    .metric-value {
-      font-size: 32px; font-weight: 700; letter-spacing: -0.03em;
-      font-family: 'JetBrains Mono', monospace;
-      line-height: 1;
-    }
-    .metric-unit { font-size: 16px; font-weight: 400; color: var(--muted); margin-left: 4px; }
-    .metric-sub { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .section-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
-    /* Latency bar */
-    .latency-bar-wrap { margin-top: 10px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
-    .latency-bar { height: 100%; border-radius: 2px; transition: width 0.8s cubic-bezier(.4,0,.2,1), background 0.4s; }
+    /* ── Metric cards ── */
+    .metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+    .mcard {
+      background:var(--surface); border:1px solid var(--border); border-radius:16px;
+      padding:22px 20px; backdrop-filter:blur(14px); position:relative; overflow:hidden;
+      transition:transform .2s,box-shadow .2s;
+    }
+    .mcard:hover { transform:translateY(-3px); box-shadow:0 18px 40px rgba(0,0,0,.45); }
+    .mcard::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,transparent,var(--accent,var(--blue)),transparent);
+    }
+    .mcard-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .mcard-icon {
+      width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.06);
+      display:flex; align-items:center; justify-content:center; font-size:18px;
+      color: var(--accent, var(--blue));
+    }
+    .mcard-label { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+    .mcard-value { font-size:30px; font-weight:800; letter-spacing:-.03em; font-family:'JetBrains Mono',monospace; line-height:1; }
+    .mcard-unit  { font-size:14px; font-weight:400; color:var(--muted); margin-left:3px; }
+    .mcard-sub   { font-size:12px; color:var(--muted); margin-top:6px; }
+    .bar-wrap { height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; margin-top:12px; }
+    .bar { height:100%; border-radius:2px; transition:width .9s cubic-bezier(.4,0,.2,1),background .4s; }
+
+    /* ── 90-day strip ── */
+    .uptime-strip { margin-top:20px; }
+    .strip-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:13px; }
+    .strip-pct { font-weight:700; color:var(--green); font-family:'JetBrains Mono',monospace; }
+    .days { display:flex; gap:2px; }
+    .day { flex:1; height:26px; border-radius:3px; background:rgba(34,197,94,.65); cursor:pointer; position:relative; transition:opacity .2s; }
+    .day:hover { opacity:.8; }
+    .day.inc { background:rgba(245,158,11,.65); }
+    .day.out { background:rgba(239,68,68,.65); }
+    .day:hover::after {
+      content:attr(data-d); position:absolute; bottom:34px; left:50%; transform:translateX(-50%);
+      background:#1e293b; border:1px solid var(--border); border-radius:6px;
+      padding:3px 8px; font-size:10px; white-space:nowrap; font-family:'JetBrains Mono',monospace; z-index:10;
+    }
+    .strip-ends { display:flex; justify-content:space-between; margin-top:4px; font-size:11px; color:var(--muted); }
 
     /* ── Services ── */
-    .services-list { display: flex; flex-direction: column; gap: 12px; }
-    .service-row {
-      display: flex; align-items: center; justify-content: space-between;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px 20px;
-      backdrop-filter: blur(12px);
-      transition: background 0.2s;
+    .services { display:flex; flex-direction:column; gap:10px; }
+    .svc {
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--surface); border:1px solid var(--border); border-radius:13px;
+      padding:14px 18px; backdrop-filter:blur(12px); transition:background .2s;
     }
-    .service-row:hover { background: rgba(255,255,255,0.06); }
-    .service-left { display: flex; align-items: center; gap: 14px; }
-    .service-icon { font-size: 18px; width: 36px; height: 36px; background: rgba(255,255,255,0.05); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-    .service-name { font-weight: 500; font-size: 15px; }
-    .service-desc { font-size: 12px; color: var(--muted); margin-top: 2px; }
-    .service-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 12px; border-radius: 999px;
-      font-size: 12px; font-weight: 500;
+    .svc:hover { background:var(--surface2); }
+    .svc-l { display:flex; align-items:center; gap:13px; }
+    .svc-ico {
+      width:36px; height:36px; border-radius:9px; background:rgba(255,255,255,0.06);
+      display:flex; align-items:center; justify-content:center; font-size:17px;
     }
-    .badge-up    { background: rgba(34,197,94,0.12);  border: 1px solid rgba(34,197,94,0.25);  color: var(--green); }
-    .badge-warn  { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); color: var(--amber); }
-    .badge-down  { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.25);  color: var(--red); }
-    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .svc-name { font-weight:600; font-size:14px; }
+    .svc-desc { font-size:12px; color:var(--muted); margin-top:1px; }
+    .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 11px; border-radius:999px; font-size:12px; font-weight:600; }
+    .b-up   { background:rgba(34,197,94,.1);  border:1px solid rgba(34,197,94,.25);  color:var(--green); }
+    .b-warn { background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); color:var(--amber); }
+    .b-down { background:rgba(239,68,68,.1);  border:1px solid rgba(239,68,68,.25);  color:var(--red); }
+    .bdot { width:5px; height:5px; border-radius:50%; background:currentColor; }
 
-    /* ── Uptime bar ── */
-    .uptime-section { margin-top: 8px; }
-    .uptime-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 13px; }
-    .uptime-days-bar { display: flex; gap: 3px; }
-    .uptime-day {
-      flex: 1; height: 28px; border-radius: 4px;
-      background: rgba(34,197,94,0.7);
-      transition: background 0.3s;
-      position: relative; cursor: pointer;
-    }
-    .uptime-day.incident { background: rgba(245,158,11,0.7); }
-    .uptime-day.outage   { background: rgba(239,68,68,0.7); }
-    .uptime-day:hover::after {
-      content: attr(data-date);
-      position: absolute; bottom: 38px; left: 50%; transform: translateX(-50%);
-      background: #1e293b; border: 1px solid var(--border); border-radius: 6px;
-      padding: 4px 10px; font-size: 11px; white-space: nowrap; z-index: 10;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* ── Patch Timeline ── */
-    .timeline { position: relative; padding-left: 28px; }
+    /* ── Timeline ── */
+    .timeline { padding-left:26px; position:relative; }
     .timeline::before {
-      content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px;
-      width: 2px; background: linear-gradient(180deg, var(--green), rgba(59,130,246,0.3));
-      border-radius: 1px;
+      content:''; position:absolute; left:7px; top:6px; bottom:6px; width:2px;
+      background:linear-gradient(180deg,var(--green),rgba(59,130,246,.25)); border-radius:1px;
     }
-    .timeline-item {
-      position: relative; margin-bottom: 28px;
+    .titem { position:relative; margin-bottom:26px; }
+    .titem:last-child { margin-bottom:0; }
+    .tdot {
+      position:absolute; left:-22px; top:5px; width:12px; height:12px; border-radius:50%;
+      border:2px solid var(--bg); transition:transform .2s;
     }
-    .timeline-item:last-child { margin-bottom: 0; }
-    .timeline-dot {
-      position: absolute; left: -24px; top: 5px;
-      width: 12px; height: 12px; border-radius: 50%;
-      border: 2px solid var(--bg);
-      transition: transform 0.2s;
-    }
-    .timeline-item:hover .timeline-dot { transform: scale(1.3); }
-    .dot-green  { background: var(--green); box-shadow: 0 0 8px rgba(34,197,94,0.6); }
-    .dot-blue   { background: var(--blue);  box-shadow: 0 0 8px rgba(59,130,246,0.6); }
-    .dot-purple { background: var(--purple);box-shadow: 0 0 8px rgba(168,85,247,0.6); }
-    .dot-amber  { background: var(--amber); box-shadow: 0 0 8px rgba(245,158,11,0.6); }
-    .timeline-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
-    .timeline-date  { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
-    .timeline-tag {
-      font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-      padding: 2px 8px; border-radius: 4px;
-    }
-    .tag-fix   { background: rgba(34,197,94,0.15);  color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
-    .tag-feat  { background: rgba(59,130,246,0.15); color: var(--blue);  border: 1px solid rgba(59,130,246,0.2); }
-    .tag-perf  { background: rgba(168,85,247,0.15); color: var(--purple);border: 1px solid rgba(168,85,247,0.2); }
-    .tag-infra { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
-    .timeline-title { font-weight: 600; font-size: 15px; color: var(--text); }
-    .timeline-body  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .titem:hover .tdot { transform:scale(1.35); }
+    .dot-g { background:var(--green);  box-shadow:0 0 8px rgba(34,197,94,.55); }
+    .dot-b { background:var(--blue);   box-shadow:0 0 8px rgba(59,130,246,.55); }
+    .dot-p { background:var(--purple); box-shadow:0 0 8px rgba(168,85,247,.55); }
+    .dot-a { background:var(--amber);  box-shadow:0 0 8px rgba(245,158,11,.55); }
+    .dot-t { background:var(--teal);   box-shadow:0 0 8px rgba(20,184,166,.55); }
+    .thead2 { display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:5px; }
+    .tdate { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); }
+    .ttag { font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; padding:2px 7px; border-radius:4px; }
+    .t-fix   { background:rgba(34,197,94,.13);  color:var(--green);  border:1px solid rgba(34,197,94,.2); }
+    .t-feat  { background:rgba(59,130,246,.13); color:var(--blue);   border:1px solid rgba(59,130,246,.2); }
+    .t-perf  { background:rgba(168,85,247,.13); color:var(--purple); border:1px solid rgba(168,85,247,.2); }
+    .t-infra { background:rgba(245,158,11,.13); color:var(--amber);  border:1px solid rgba(245,158,11,.2); }
+    .ttitle { font-weight:700; font-size:15px; }
+    .tbody2 { font-size:13px; color:var(--muted); line-height:1.65; margin-top:3px; }
+    code { background:rgba(255,255,255,0.07); padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-size:11px; }
 
     /* ── Footer ── */
     footer {
-      margin-top: 64px; padding: 24px 0 48px;
-      border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-      font-size: 13px; color: var(--muted);
+      margin-top:56px; padding:20px 0;
+      border-top:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
+      font-size:12px; color:var(--muted);
     }
-    .footer-brand { font-weight: 600; color: var(--text); }
-    .refresh-note { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+    .footer-brand { font-weight:700; color:var(--text); font-size:13px; }
 
     /* ── Animations ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    .animate { animation: fadeUp 0.5s ease both; }
-    .delay-1 { animation-delay: 0.05s; }
-    .delay-2 { animation-delay: 0.10s; }
-    .delay-3 { animation-delay: 0.15s; }
-    .delay-4 { animation-delay: 0.20s; }
-    .delay-5 { animation-delay: 0.25s; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    .a0{animation:fadeUp .45s ease both}
+    .a1{animation:fadeUp .45s .06s ease both}
+    .a2{animation:fadeUp .45s .12s ease both}
+    .a3{animation:fadeUp .45s .18s ease both}
+    .a4{animation:fadeUp .45s .24s ease both}
 
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      .metrics-grid { grid-template-columns: 1fr 1fr; }
-      .service-desc { display: none; }
-      footer { flex-direction: column; text-align: center; }
+    @media(max-width:600px){
+      .metrics{grid-template-columns:1fr 1fr}
+      .svc-desc{display:none}
+      footer{flex-direction:column;text-align:center}
     }
   </style>
 </head>
 <body>
+<div class="wrap">
 
-<!-- Top Banner -->
-<div class="top-banner">
-  <span class="logo-mark">🍽️</span>
-  <span class="banner-brand">Restaurant Bot</span>
-  <span class="sep">·</span>
-  <span>Status &amp; Health Dashboard</span>
-</div>
-
-<div class="container">
-  <!-- Header -->
-  <header class="animate">
-    <div class="status-pill operational" id="global-pill">
-      <span class="pulse-dot"></span>
-      <span id="global-status-text">All Systems Operational</span>
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <i class="hgi hgi-stroke hgi-restaurant-01 topbar-icon"></i>
+      <span class="topbar-brand">Restaurant Bot</span>
+      <span style="color:var(--border)">·</span>
+      <span>System Status</span>
     </div>
-    <h1>System <span>Health</span></h1>
-    <p class="header-sub">
-      <span id="env-badge">production</span>
+    <div class="topbar-right">
+      <div class="live-chip"><div class="live-dot-sm"></div>LIVE</div>
+      <span id="ts" style="font-family:'JetBrains Mono',monospace;font-size:11px;">—</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="a0">
+    <div class="status-pill s-operational" id="gpill">
+      <span class="pulse"></span>
+      <span id="gtxt">All Systems Operational</span>
+    </div>
+    <h1>Server <em>Health</em></h1>
+    <div class="header-meta">
+      <span id="envBadge">production</span>
       <span class="sep">·</span>
-      <span>v<span id="app-version">1.0.0</span></span>
+      <span>v<span id="ver">1.0.0</span></span>
       <span class="sep">·</span>
-      <span>Updated <span id="last-updated">—</span></span>
-    </p>
+      <span>Refreshes via Socket.IO</span>
+    </div>
   </header>
 
   <!-- Metrics -->
-  <p class="section-title animate delay-1">Live Metrics</p>
-  <div class="metrics-grid">
+  <div class="section-label a1"><i class="hgi hgi-stroke hgi-analytics-01"></i> Live Metrics</div>
+  <div class="metrics a1">
+
     <!-- Uptime -->
-    <div class="metric-card animate delay-1" style="--accent-color: var(--green)">
-      <div class="metric-icon">⏱️</div>
-      <div class="metric-label">Uptime</div>
-      <div class="metric-value" id="uptime-live">—</div>
-      <div class="metric-sub" id="uptime-seconds">Loading…</div>
+    <div class="mcard" style="--accent:var(--green)">
+      <div class="mcard-head">
+        <div class="mcard-icon"><i class="hgi hgi-stroke hgi-clock-01"></i></div>
+        <div class="mcard-label">Uptime</div>
+      </div>
+      <div class="mcard-value" id="uptimeVal">—</div>
+      <div class="mcard-sub" id="uptimeSub">Loading…</div>
     </div>
 
     <!-- API Latency -->
-    <div class="metric-card animate delay-2" style="--accent-color: var(--blue)">
-      <div class="metric-icon">⚡</div>
-      <div class="metric-label">API Latency</div>
-      <div class="metric-value"><span id="api-latency">—</span><span class="metric-unit">ms</span></div>
-      <div class="metric-sub">Response time</div>
-      <div class="latency-bar-wrap"><div class="latency-bar" id="api-latency-bar" style="width:0%"></div></div>
+    <div class="mcard" style="--accent:var(--blue)">
+      <div class="mcard-head">
+        <div class="mcard-icon"><i class="hgi hgi-stroke hgi-zap"></i></div>
+        <div class="mcard-label">API Latency</div>
+      </div>
+      <div class="mcard-value"><span id="apiLat">—</span><span class="mcard-unit">ms</span></div>
+      <div class="mcard-sub">Response time</div>
+      <div class="bar-wrap"><div class="bar" id="apiBar" style="width:0%"></div></div>
     </div>
 
     <!-- DB Latency -->
-    <div class="metric-card animate delay-3" style="--accent-color: var(--purple)">
-      <div class="metric-icon">🗄️</div>
-      <div class="metric-label">DB Latency</div>
-      <div class="metric-value"><span id="db-latency">—</span><span class="metric-unit">ms</span></div>
-      <div class="metric-sub">MongoDB ping</div>
-      <div class="latency-bar-wrap"><div class="latency-bar" id="db-latency-bar" style="width:0%"></div></div>
+    <div class="mcard" style="--accent:var(--purple)">
+      <div class="mcard-head">
+        <div class="mcard-icon"><i class="hgi hgi-stroke hgi-database-01"></i></div>
+        <div class="mcard-label">DB Latency</div>
+      </div>
+      <div class="mcard-value"><span id="dbLat">—</span><span class="mcard-unit">ms</span></div>
+      <div class="mcard-sub">MongoDB ping</div>
+      <div class="bar-wrap"><div class="bar" id="dbBar" style="width:0%"></div></div>
     </div>
 
     <!-- Memory -->
-    <div class="metric-card animate delay-4" style="--accent-color: var(--amber)">
-      <div class="metric-icon">💾</div>
-      <div class="metric-label">Memory</div>
-      <div class="metric-value"><span id="mem-used">—</span><span class="metric-unit">MB</span></div>
-      <div class="metric-sub" id="mem-sub">of — MB used</div>
-      <div class="latency-bar-wrap"><div class="latency-bar" id="mem-bar" style="width:0%"></div></div>
+    <div class="mcard" style="--accent:var(--amber)">
+      <div class="mcard-head">
+        <div class="mcard-icon"><i class="hgi hgi-stroke hgi-hard-drive"></i></div>
+        <div class="mcard-label">Memory</div>
+      </div>
+      <div class="mcard-value"><span id="memVal">—</span><span class="mcard-unit">MB</span></div>
+      <div class="mcard-sub" id="memSub">of — MB used</div>
+      <div class="bar-wrap"><div class="bar" id="memBar" style="width:0%"></div></div>
     </div>
+
   </div>
 
-  <!-- 90-day Uptime Bar -->
-  <div class="uptime-section animate delay-2" style="margin-top:32px">
-    <div class="uptime-label-row">
-      <span style="font-size:13px; font-weight:500">90-day uptime</span>
-      <span style="color:var(--green); font-weight:600; font-family:'JetBrains Mono',monospace" id="uptime-pct">99.98%</span>
+  <!-- 90-day uptime strip -->
+  <div class="uptime-strip a2">
+    <div class="strip-row">
+      <span style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;">
+        <i class="hgi hgi-stroke hgi-calendar-check-01" style="color:var(--green)"></i> 90-day uptime
+      </span>
+      <span class="strip-pct">99.98%</span>
     </div>
-    <div class="uptime-days-bar" id="uptime-days-bar"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--muted)">
-      <span>90 days ago</span><span>Today</span>
-    </div>
+    <div class="days" id="days"></div>
+    <div class="strip-ends"><span>90 days ago</span><span>Today</span></div>
   </div>
 
   <!-- Services -->
-  <p class="section-title animate delay-2">Services</p>
-  <div class="services-list animate delay-3" id="services-list">
-    <div class="service-row">
-      <div class="service-left">
-        <div class="service-icon">💬</div>
+  <div class="section-label a2"><i class="hgi hgi-stroke hgi-server-02"></i> Services</div>
+  <div class="services a3">
+
+    <div class="svc">
+      <div class="svc-l">
+        <div class="svc-ico" style="color:var(--green)"><i class="hgi hgi-stroke hgi-whatsapp"></i></div>
         <div>
-          <div class="service-name">WhatsApp Bot</div>
-          <div class="service-desc">Meta Webhook · Conversation engine</div>
+          <div class="svc-name">WhatsApp Bot</div>
+          <div class="svc-desc">Meta Webhook · Conversation engine</div>
         </div>
       </div>
-      <span class="service-badge badge-up" id="svc-whatsapp"><span class="badge-dot"></span>Operational</span>
+      <span class="badge b-up" id="sv-wa"><span class="bdot"></span>Operational</span>
     </div>
-    <div class="service-row">
-      <div class="service-left">
-        <div class="service-icon">🗄️</div>
+
+    <div class="svc">
+      <div class="svc-l">
+        <div class="svc-ico" style="color:var(--purple)"><i class="hgi hgi-stroke hgi-database-01"></i></div>
         <div>
-          <div class="service-name">MongoDB</div>
-          <div class="service-desc">Primary database · GridFS storage</div>
+          <div class="svc-name">MongoDB</div>
+          <div class="svc-desc">Primary database · GridFS storage</div>
         </div>
       </div>
-      <span class="service-badge badge-up" id="svc-db"><span class="badge-dot"></span>Connected</span>
+      <span class="badge b-up" id="sv-db"><span class="bdot"></span>Connected</span>
     </div>
-    <div class="service-row">
-      <div class="service-left">
-        <div class="service-icon">💳</div>
+
+    <div class="svc">
+      <div class="svc-l">
+        <div class="svc-ico" style="color:var(--blue)"><i class="hgi hgi-stroke hgi-credit-card"></i></div>
         <div>
-          <div class="service-name">Campay Payments</div>
-          <div class="service-desc">Mobile money · Webhook processor</div>
+          <div class="svc-name">Campay Payments</div>
+          <div class="svc-desc">Mobile money · Webhook processor</div>
         </div>
       </div>
-      <span class="service-badge badge-up" id="svc-payments"><span class="badge-dot"></span>Operational</span>
+      <span class="badge b-up" id="sv-pay"><span class="bdot"></span>Operational</span>
     </div>
-    <div class="service-row">
-      <div class="service-left">
-        <div class="service-icon">🚗</div>
+
+    <div class="svc">
+      <div class="svc-l">
+        <div class="svc-ico" style="color:var(--teal)"><i class="hgi hgi-stroke hgi-delivery-truck-01"></i></div>
         <div>
-          <div class="service-name">Delivery API</div>
-          <div class="service-desc">Driver tracking · Mapbox routing</div>
+          <div class="svc-name">Delivery API</div>
+          <div class="svc-desc">Driver tracking · Mapbox routing</div>
         </div>
       </div>
-      <span class="service-badge badge-up" id="svc-delivery"><span class="badge-dot"></span>Operational</span>
+      <span class="badge b-up" id="sv-del"><span class="bdot"></span>Operational</span>
     </div>
-    <div class="service-row">
-      <div class="service-left">
-        <div class="service-icon">🔌</div>
+
+    <div class="svc">
+      <div class="svc-l">
+        <div class="svc-ico" style="color:var(--amber)"><i class="hgi hgi-stroke hgi-wifi-01"></i></div>
         <div>
-          <div class="service-name">Socket.IO</div>
-          <div class="service-desc">Real-time dashboard events</div>
+          <div class="svc-name">Socket.IO</div>
+          <div class="svc-desc">Real-time dashboard events · Live feed</div>
         </div>
       </div>
-      <span class="service-badge badge-up" id="svc-socket"><span class="badge-dot"></span>Operational</span>
+      <span class="badge b-up" id="sv-sio"><span class="bdot"></span>Connected</span>
     </div>
-    <div class="service-row">
-      <div class="service-left">
-        <div class="service-icon">💾</div>
+
+    <div class="svc">
+      <div class="svc-l">
+        <div class="svc-ico" style="color:var(--green)"><i class="hgi hgi-stroke hgi-cloud-server"></i></div>
         <div>
-          <div class="service-name">LRU File Cache</div>
-          <div class="service-desc">In-memory GridFS asset cache</div>
+          <div class="svc-name">LRU File Cache</div>
+          <div class="svc-desc">In-memory GridFS asset cache · 50 MB</div>
         </div>
       </div>
-      <span class="service-badge badge-up" id="svc-cache"><span class="badge-dot"></span>Active</span>
+      <span class="badge b-up" id="sv-cache"><span class="bdot"></span>Active</span>
     </div>
+
   </div>
 
-  <!-- Patch / Changelog Timeline -->
-  <p class="section-title animate delay-3">Patches &amp; Changelog</p>
-  <div class="timeline animate delay-4">
+  <!-- Patch Timeline -->
+  <div class="section-label a3"><i class="hgi hgi-stroke hgi-git-branch"></i> Patches &amp; Changelog</div>
+  <div class="timeline a4">
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-blue"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-07-13</span>
-        <span class="timeline-tag tag-feat">feat</span>
+    <div class="titem">
+      <div class="tdot dot-b"></div>
+      <div class="thead2">
+        <span class="tdate">2026-07-13</span>
+        <span class="ttag t-feat">feat</span>
       </div>
-      <div class="timeline-title">Professional /health status dashboard</div>
-      <div class="timeline-body">Replaced raw JSON health endpoint with a real-time status page featuring live metrics, service indicators, latency gauges, uptime history, and this changelog — mirroring industry-standard status pages.</div>
+      <div class="ttitle">Professional /health status dashboard</div>
+      <div class="tbody2">Replaced raw JSON endpoint with a real-time status page — HugeIcons, Socket.IO live push, DB ping latency, memory gauges, service badges, and this changelog.</div>
     </div>
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-green"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-07-11</span>
-        <span class="timeline-tag tag-infra">infra</span>
+    <div class="titem">
+      <div class="tdot dot-t"></div>
+      <div class="thead2">
+        <span class="tdate">2026-07-11</span>
+        <span class="ttag t-infra">infra</span>
       </div>
-      <div class="timeline-title">Railway deployment &amp; environment mapping</div>
-      <div class="timeline-body">Configured <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:12px">railway.json</code> for persistent Node.js hosting. All production environment variables correctly mapped. Socket.IO confirmed working behind Railway proxy.</div>
+      <div class="ttitle">Railway deployment &amp; environment mapping</div>
+      <div class="tbody2">Configured <code>railway.json</code> for persistent Node.js hosting. All production environment variables correctly mapped. Socket.IO confirmed working behind Railway's reverse proxy.</div>
     </div>
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-purple"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-07-10</span>
-        <span class="timeline-tag tag-perf">perf</span>
+    <div class="titem">
+      <div class="tdot dot-p"></div>
+      <div class="thead2">
+        <span class="tdate">2026-07-10</span>
+        <span class="ttag t-perf">perf</span>
       </div>
-      <div class="timeline-title">GridFS LRU cache — sub-10ms file serving</div>
-      <div class="timeline-body">Implemented a 50 MB in-memory LRU cache for GridFS assets. Static file requests now bypass rate-limiting middleware entirely, achieving consistent &lt;10 ms response times on repeat requests.</div>
+      <div class="ttitle">GridFS LRU cache — sub-10 ms file serving</div>
+      <div class="tbody2">50 MB in-memory LRU cache for GridFS assets. Static file requests bypass rate-limiting middleware entirely, achieving consistent &lt;10 ms response on cache hits.</div>
     </div>
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-amber"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-06-26</span>
-        <span class="timeline-tag tag-fix">fix</span>
+    <div class="titem">
+      <div class="tdot dot-a"></div>
+      <div class="thead2">
+        <span class="tdate">2026-06-26</span>
+        <span class="ttag t-fix">fix</span>
       </div>
-      <div class="timeline-title">Dashboard UI compression resolved</div>
-      <div class="timeline-body">Fixed layout constraints causing UI component compression on the admin and giver dashboards. Implemented responsive CSS overrides to ensure consistent rendering across all screen sizes.</div>
+      <div class="ttitle">Dashboard UI compression resolved</div>
+      <div class="tbody2">Fixed layout constraints causing UI component compression on the admin and giver dashboards. Responsive CSS overrides ensure consistent rendering across all screen sizes.</div>
     </div>
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-green"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-05-17</span>
-        <span class="timeline-tag tag-fix">fix</span>
+    <div class="titem">
+      <div class="tdot dot-g"></div>
+      <div class="thead2">
+        <span class="tdate">2026-05-17</span>
+        <span class="ttag t-fix">fix</span>
       </div>
-      <div class="timeline-title">Receipt generation after order completion</div>
-      <div class="timeline-body">Resolved broken receipt generation flow. Customers can now reliably retrieve PDF receipts after completing an order via WhatsApp. The receipt is attached to the order lifecycle event chain.</div>
+      <div class="ttitle">Receipt generation after order completion</div>
+      <div class="tbody2">Resolved broken receipt generation flow. Customers now reliably receive PDF receipts via WhatsApp after order completion; receipt is bound to the order lifecycle event chain.</div>
     </div>
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-blue"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-05-04</span>
-        <span class="timeline-tag tag-fix">fix</span>
+    <div class="titem">
+      <div class="tdot dot-b"></div>
+      <div class="thead2">
+        <span class="tdate">2026-05-04</span>
+        <span class="ttag t-fix">fix</span>
       </div>
-      <div class="timeline-title">Mapbox 3D driver tracking &amp; GPS permissions</div>
-      <div class="timeline-body">Refined the Mapbox-powered 3D tracking overlay for smooth performance on Android, iOS, and desktop browsers. Added robust GPS permission handling with graceful fallbacks when location is denied.</div>
+      <div class="ttitle">Mapbox 3D driver tracking &amp; GPS permissions</div>
+      <div class="tbody2">Refined Mapbox-powered 3D tracking overlay for smooth performance on Android, iOS, and desktop. Added robust GPS permission handling with graceful fallbacks when location is denied.</div>
     </div>
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-green"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-04-13</span>
-        <span class="timeline-tag tag-perf">perf</span>
+    <div class="titem">
+      <div class="tdot dot-p"></div>
+      <div class="thead2">
+        <span class="tdate">2026-04-13</span>
+        <span class="ttag t-perf">perf</span>
       </div>
-      <div class="timeline-title">Admin dashboard latency optimization</div>
-      <div class="timeline-body">Eliminated high-latency bottlenecks in admin dashboard by implementing MongoDB connection pooling, bypassing heavy middleware for static file routes, and tuning GridFS streaming.</div>
+      <div class="ttitle">Admin dashboard latency optimization</div>
+      <div class="tbody2">Eliminated high-latency bottlenecks via MongoDB connection pooling, middleware bypass for static routes, and GridFS streaming tuning. Consistent sub-10 ms admin loads.</div>
     </div>
 
-    <div class="timeline-item">
-      <div class="timeline-dot dot-purple"></div>
-      <div class="timeline-header">
-        <span class="timeline-date">2026-04-12</span>
-        <span class="timeline-tag tag-feat">feat</span>
+    <div class="titem">
+      <div class="tdot dot-g"></div>
+      <div class="thead2">
+        <span class="tdate">2026-04-12</span>
+        <span class="ttag t-feat">feat</span>
       </div>
-      <div class="timeline-title">Admin avatar dropdown navigation</div>
-      <div class="timeline-body">Added hover-activated dropdown on admin avatar providing quick access to Settings and Logout, improving dashboard navigation flow for restaurant operators.</div>
+      <div class="ttitle">Admin avatar dropdown navigation</div>
+      <div class="tbody2">Hover-activated dropdown on admin avatar — quick access to Settings and Logout — improving navigation flow for restaurant operators.</div>
     </div>
 
   </div>
 
   <!-- Footer -->
-  <footer class="animate delay-5">
+  <footer>
     <div>
-      <span class="footer-brand">🍽️ Restaurant Bot</span> &nbsp;·&nbsp; Multi-tenant WhatsApp SalesBot (Cameroon)
+      <span class="footer-brand"><i class="hgi hgi-stroke hgi-restaurant-01" style="vertical-align:middle;margin-right:5px;"></i>Restaurant Bot</span>
+      &nbsp;·&nbsp; Multi-tenant WhatsApp SalesBot (Cameroon)
     </div>
-    <div class="refresh-note">Auto-refreshes every 30 s</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;">
+      Real-time via Socket.IO
+    </div>
   </footer>
-</div>
+
+</div><!-- /wrap -->
 
 <script>
-  // ── Utilities ──────────────────────────────────────────────────────────────
-  const $ = id => document.getElementById(id);
-  const fmt = n => n.toLocaleString();
+  /* ── Helpers ── */
+  const $  = id => document.getElementById(id);
+  const lc = ms => ms < 50 ? '#22c55e' : ms < 150 ? '#f59e0b' : '#ef4444';
+  const lp = (ms,max=300) => Math.min(100,(ms/max)*100).toFixed(1)+'%';
+  const mc = p => p < 60 ? '#22c55e' : p < 80 ? '#f59e0b' : '#ef4444';
 
-  function formatUptime(secs) {
-    const d = Math.floor(secs / 86400);
-    const h = Math.floor((secs % 86400) / 3600);
-    const m = Math.floor((secs % 3600) / 60);
-    const s = Math.floor(secs % 60);
-    if (d > 0) return `${d}d ${h}h ${m}m`;
-    if (h > 0) return `${h}h ${m}m ${s}s`;
-    return `${m}m ${s}s`;
+  function fmtUptime(s) {
+    const d=Math.floor(s/86400), h=Math.floor((s%86400)/3600),
+          m=Math.floor((s%3600)/60), ss=Math.floor(s%60);
+    if(d>0) return `${d}d ${h}h ${m}m`;
+    if(h>0) return `${h}h ${m}m ${ss}s`;
+    return `${m}m ${ss}s`;
   }
 
-  function formatUptime2(secs) {
-    return `${fmt(Math.floor(secs))}s total uptime`;
-  }
-
-  function latencyColor(ms) {
-    if (ms < 50)  return '#22c55e';
-    if (ms < 150) return '#f59e0b';
-    return '#ef4444';
-  }
-
-  function latencyPct(ms, max = 300) {
-    return Math.min(100, (ms / max) * 100).toFixed(1);
-  }
-
-  function memColor(pct) {
-    if (pct < 60) return '#22c55e';
-    if (pct < 80) return '#f59e0b';
-    return '#ef4444';
-  }
-
-  // ── Uptime 90-day Bar ─────────────────────────────────────────────────────
-  function buildUptimeBar() {
-    const bar = $('uptime-days-bar');
-    const incidents = ['2026-06-26']; // days with known incidents
-    const today = new Date();
-    for (let i = 89; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      const ds = d.toISOString().slice(0, 10);
-      const div = document.createElement('div');
-      div.className = 'uptime-day' + (incidents.includes(ds) ? ' incident' : '');
-      div.setAttribute('data-date', ds);
-      bar.appendChild(div);
+  /* ── 90-day strip ── */
+  (function buildStrip(){
+    const c=$('days'), inc=['2026-06-26'], today=new Date();
+    for(let i=89;i>=0;i--){
+      const d=new Date(today); d.setDate(today.getDate()-i);
+      const ds=d.toISOString().slice(0,10);
+      const el=document.createElement('div');
+      el.className='day'+(inc.includes(ds)?' inc':'');
+      el.setAttribute('data-d',ds);
+      c.appendChild(el);
     }
-  }
-  buildUptimeBar();
+  })();
 
-  // ── Status update logic ───────────────────────────────────────────────────
-  let liveUptime = null;
-  let uptimeTicker = null;
-
-  function startUptimeTicker(baseSecs) {
-    if (uptimeTicker) clearInterval(uptimeTicker);
-    let secs = baseSecs;
-    $('uptime-live').textContent = formatUptime(secs);
-    $('uptime-seconds').textContent = formatUptime2(secs);
-    uptimeTicker = setInterval(() => {
-      secs += 1;
-      $('uptime-live').textContent = formatUptime(secs);
-      $('uptime-seconds').textContent = formatUptime2(secs);
-    }, 1000);
+  /* ── Uptime ticker ── */
+  let _base=0, _tick=null;
+  function startTicker(base){
+    _base=base; if(_tick) clearInterval(_tick);
+    const tick=()=>{
+      _base+=1;
+      $('uptimeVal').textContent=fmtUptime(_base);
+      $('uptimeSub').textContent=`${Math.floor(_base).toLocaleString()} s total`;
+    };
+    tick(); _tick=setInterval(tick,1000);
   }
 
-  function updateGlobalStatus(dbOk) {
-    const pill = $('global-pill');
-    const txt  = $('global-status-text');
-    if (dbOk) {
-      pill.className = 'status-pill operational';
-      txt.textContent = 'All Systems Operational';
-    } else {
-      pill.className = 'status-pill degraded';
-      txt.textContent = 'Partial Degradation';
+  /* ── Apply data ── */
+  function applyData(d){
+    // timestamp
+    $('ts').textContent=new Date(d.timestamp).toLocaleTimeString();
+    // version / env
+    $('ver').textContent=d.version||'1.0.0';
+    $('envBadge').textContent=d.environment||'production';
+    // uptime
+    startTicker(d.uptime);
+    // api latency
+    const a=d.latency?.api??0;
+    $('apiLat').textContent=a;
+    $('apiBar').style.width=lp(a); $('apiBar').style.background=lc(a);
+    // db latency
+    const db=d.latency?.db??0;
+    $('dbLat').textContent=db;
+    $('dbBar').style.width=lp(db); $('dbBar').style.background=lc(db);
+    // memory
+    if(d.memory){
+      const{used,total,percent}=d.memory;
+      $('memVal').textContent=used;
+      $('memSub').textContent=`of ${total} MB used`;
+      $('memBar').style.width=percent+'%'; $('memBar').style.background=mc(percent);
     }
+    // db service badge
+    const dbOk=d.db?.status==='connected';
+    const dbBadge=$('sv-db');
+    if(dbOk){ dbBadge.className='badge b-up'; dbBadge.innerHTML='<span class="bdot"></span>Connected'; }
+    else     { dbBadge.className='badge b-down'; dbBadge.innerHTML='<span class="bdot"></span>Disconnected'; }
+    // global pill
+    const pill=$('gpill'), gtxt=$('gtxt');
+    if(dbOk){ pill.className='status-pill s-operational'; gtxt.textContent='All Systems Operational'; }
+    else     { pill.className='status-pill s-degraded';    gtxt.textContent='Partial Degradation'; }
   }
 
-  function updateDbService(dbStatus) {
-    const badge = $('svc-db');
-    if (dbStatus === 'connected') {
-      badge.className = 'service-badge badge-up';
-      badge.innerHTML = '<span class="badge-dot"></span>Connected';
-    } else {
-      badge.className = 'service-badge badge-down';
-      badge.innerHTML = '<span class="badge-dot"></span>Disconnected';
-    }
-  }
-
-  async function fetchStatus() {
+  /* ── Socket.IO real-time ── */
+  let _socket=null;
+  function connectSocket(){
     try {
-      const t0 = performance.now();
-      const res = await fetch('/api/health/status');
-      const data = await res.json();
+      _socket = io({ transports:['websocket','polling'] });
 
-      // ── Uptime ──
-      startUptimeTicker(data.uptime);
+      _socket.on('connect', ()=>{
+        $('sv-sio').className='badge b-up';
+        $('sv-sio').innerHTML='<span class="bdot"></span>Connected';
+        // Ask server for health on connect
+        _socket.emit('requestHealthStats');
+      });
 
-      // ── Version & env ──
-      $('app-version').textContent = data.version || '1.0.0';
-      $('env-badge').textContent   = data.environment || 'production';
-      $('last-updated').textContent = new Date(data.timestamp).toLocaleTimeString();
+      _socket.on('disconnect', ()=>{
+        $('sv-sio').className='badge b-warn';
+        $('sv-sio').innerHTML='<span class="bdot"></span>Reconnecting…';
+      });
 
-      // ── API Latency ──
-      const apiMs = data.latency?.api ?? Math.round(performance.now() - t0);
-      $('api-latency').textContent = apiMs;
-      const apiBar = $('api-latency-bar');
-      apiBar.style.width      = latencyPct(apiMs) + '%';
-      apiBar.style.background = latencyColor(apiMs);
+      // Real-time health push from server
+      _socket.on('healthStats', (data)=>{ applyData(data); });
 
-      // ── DB Latency ──
-      const dbMs = data.latency?.db ?? 0;
-      $('db-latency').textContent = dbMs;
-      const dbBar = $('db-latency-bar');
-      dbBar.style.width      = latencyPct(dbMs) + '%';
-      dbBar.style.background = latencyColor(dbMs);
-
-      // ── Memory ──
-      if (data.memory) {
-        const { used, total, percent } = data.memory;
-        $('mem-used').textContent = used;
-        $('mem-sub').textContent  = `of ${total} MB used`;
-        const mBar = $('mem-bar');
-        mBar.style.width      = percent + '%';
-        mBar.style.background = memColor(percent);
-      }
-
-      // ── Services ──
-      updateDbService(data.db?.status);
-      updateGlobalStatus(data.db?.status === 'connected');
-
-    } catch (e) {
-      // Fallback: show local data
-      startUptimeTicker(performance.now() / 1000);
-      console.warn('Health API unreachable, using local fallback', e);
-    }
+    } catch(e) { console.warn('Socket.IO unavailable, using HTTP polling', e); }
   }
 
-  // Initial load + auto-refresh
-  fetchStatus();
-  setInterval(fetchStatus, 30_000);
+  /* ── HTTP fallback + 10s interval ── */
+  async function fetchHTTP(){
+    try {
+      const t0=performance.now();
+      const res=await fetch('/api/health/status');
+      const d=await res.json();
+      // inject client-measured api latency if server didn't supply
+      if(!d.latency) d.latency={};
+      if(!d.latency.api) d.latency.api=Math.round(performance.now()-t0);
+      applyData(d);
+      // also push to socket peers if we own the update
+      if(_socket?.connected) _socket.emit('requestHealthStats');
+    } catch(e){ console.warn('HTTP health poll failed',e); }
+  }
+
+  /* ── Boot ── */
+  connectSocket();
+  fetchHTTP();                         // immediate first load
+  setInterval(fetchHTTP, 10_000);      // poll every 10 s as backup
 </script>
 </body>
 </html>

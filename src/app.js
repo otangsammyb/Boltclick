@@ -168,6 +168,7 @@ app.use('/admin',       express.static(path.join(__dirname, '../public/admin')))
 app.use('/delivery',    express.static(path.join(__dirname, '../public/delivery')));
 app.use('/health',      express.static(path.join(__dirname, '../public/health')));
 app.use('/super-admin', express.static(path.join(__dirname, '../public/super-admin')));
+app.use('/',            express.static(path.join(__dirname, '../public/landing')));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/webhook', webhookRouter);
@@ -240,9 +241,9 @@ app.get('/api/config', (req, res) => {
 
 // Routes moved up for performance optimization
 
-// ── Root Redirect ─────────────────────────────────────────────────────────────
+// ── Root: Landing Page ─────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.redirect(301, '/admin');
+  res.sendFile(path.join(__dirname, '../public/landing/index.html'));
 });
 
 // ── SPA fallbacks ─────────────────────────────────────────────────────────────

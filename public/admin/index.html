@@ -575,6 +575,28 @@
             </div>
             <div id="logoUploadMsg" style="font-size:13px;display:none;"></div>
           </form>
+
+          <!-- Brand Color -->
+          <div style="border-top:1px solid var(--border);padding:24px;">
+            <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:16px;display:block;">
+              <i class="hgi hgi-stroke hgi-paint-board" style="margin-right:6px;font-size:16px;"></i>
+              Brand Accent Color
+            </label>
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+              <input type="color" id="brandColorInput" value="#00ed64"
+                style="width:56px;height:44px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;background:none;padding:4px;" />
+              <div style="flex:1;min-width:160px;">
+                <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;" id="brandColorHex">#00ed64</div>
+                <div style="font-size:12px;color:var(--muted);">Preview updates live. Applies across buttons, charts, badges, and active states.</div>
+              </div>
+              <button id="brandColorSave" class="btn-primary"
+                style="width:auto;padding:11px 22px;height:44px;display:inline-flex;align-items:center;gap:8px;font-size:14px;border-radius:10px;">
+                <i class="hgi hgi-stroke hgi-floppy-disk" style="font-size:17px;"></i>
+                <span id="brandColorSaveText">Apply Color</span>
+              </button>
+            </div>
+            <div id="brandColorMsg" style="font-size:13px;margin-top:12px;display:none;"></div>
+          </div>
         </div>
       <div class="section-card" style="margin-top: 24px;">
         <div class="section-header">

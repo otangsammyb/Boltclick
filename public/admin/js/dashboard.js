@@ -791,7 +791,22 @@ async function downloadReport(type) {
 }
 window.downloadReport = downloadReport;
 
-// \u2500\u2500 SETTINGS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// ── Brand Color helpers ────────────────────────────────────────────────────────────
+function darkenHex(hex, pct) {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c+c).join('');
+  const num = parseInt(h, 16);
+  const r = Math.max(0, (num >> 16) - pct);
+  const g = Math.max(0, ((num >> 8) & 0xff) - pct);
+  const b = Math.max(0, (num & 0xff) - pct);
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+function applyBrandColor(color) {
+  document.documentElement.style.setProperty('--green', color);
+  document.documentElement.style.setProperty('--green-dark', darkenHex(color, 15));
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
 function applyHeaderLogo(url, name = '') {
   // Sidebar logo (left of "RestaurantBot" text)
   const sidebarImg = document.getElementById('sidebarLogo');
@@ -842,6 +857,14 @@ async function loadSettings() {
   if (res.data?.campayAppName) document.getElementById('campayAppName').value = res.data.campayAppName;
   if (res.data?.campayBaseUrl) document.getElementById('campayBaseUrl').value = res.data.campayBaseUrl;
   if (res.data?.campayWebhookUrl) document.getElementById('campayWebhookUrl').value = res.data.campayWebhookUrl;
+
+  // Apply saved brand color
+  const savedColor = res.data?.brandColor || '#00ed64';
+  applyBrandColor(savedColor);
+  const colorInput = document.getElementById('brandColorInput');
+  if (colorInput) colorInput.value = savedColor;
+  const colorHex = document.getElementById('brandColorHex');
+  if (colorHex) colorHex.textContent = savedColor;
 
   applyHeaderLogo(logoUrl, restaurantName);
 }
@@ -940,11 +963,52 @@ document.getElementById('campayForm')?.addEventListener('submit', async (e) => {
   }
 });
 
+// ── Brand Color Live Picker ───────────────────────────────────────────────────
+document.getElementById('brandColorInput')?.addEventListener('input', (e) => {
+  const color = e.target.value;
+  applyBrandColor(color);
+  const hex = document.getElementById('brandColorHex');
+  if (hex) hex.textContent = color;
+});
+
+document.getElementById('brandColorSave')?.addEventListener('click', async () => {
+  const color = document.getElementById('brandColorInput')?.value;
+  if (!color) return;
+  const btn = document.getElementById('brandColorSave');
+  const msg = document.getElementById('brandColorMsg');
+  const text = document.getElementById('brandColorSaveText');
+  text.textContent = 'Saving...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/settings/brand-color`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ brandColor: color }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      msg.textContent = '\u2705 Brand color applied!';
+      msg.style.color = 'var(--green)';
+    } else { throw new Error(data.message); }
+  } catch (err) {
+    msg.textContent = '\u274c ' + err.message;
+    msg.style.color = 'var(--red)';
+  } finally {
+    msg.style.display = 'block';
+    text.textContent = 'Apply Color';
+    btn.disabled = false;
+    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+  }
+});
+
 // ── Bootstrap header logo on page load ───────────────────────────────────────
 (async () => {
   try {
     const res = await api('/settings');
-    if (res.data) applyHeaderLogo(res.data.logoUrl, res.data.restaurantName);
+    if (res.data) {
+      applyHeaderLogo(res.data.logoUrl, res.data.restaurantName);
+      if (res.data.brandColor) applyBrandColor(res.data.brandColor);
+    }
   } catch (e) {}
 })();
 

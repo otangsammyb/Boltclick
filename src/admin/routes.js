@@ -668,7 +668,11 @@ router.get('/settings', authMiddleware, async (req, res) => {
         campayPassword: sanitizedPassword,
         campayAppName: settings.campayAppName || '',
         campayBaseUrl: settings.campayBaseUrl || '',
-        campayWebhookUrl: settings.campayWebhookUrl || ''
+        campayWebhookUrl: settings.campayWebhookUrl || '',
+        brandColor: settings.brandColor || '#00ed64',
+        logoUrl: settings.logoUrl || '',
+        restaurantName: settings.restaurantName || '',
+        whatsappNumber: settings.whatsappNumber || ''
       }
     });
   } catch (err) {
@@ -701,6 +705,22 @@ router.post('/settings/campay', authMiddleware, async (req, res) => {
     clearTokenCache();
 
     res.json({ success: true, message: 'Settings saved successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/settings/brand-color', authMiddleware, async (req, res) => {
+  try {
+    const { brandColor } = req.body;
+    if (!brandColor || !/^#[0-9a-fA-F]{3,6}$/.test(brandColor)) {
+      return res.status(400).json({ success: false, message: 'Invalid color format. Use a hex color like #00ed64' });
+    }
+    let settings = await Settings.findOne({ type: 'global' });
+    if (!settings) settings = new Settings({ type: 'global' });
+    settings.brandColor = brandColor;
+    await settings.save();
+    res.json({ success: true, message: 'Brand color updated' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

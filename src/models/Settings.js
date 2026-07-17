@@ -28,6 +28,11 @@ const settingsSchema = new mongoose.Schema({
   campayWebhookUrl: {
     type: String,
     trim: true,
+  },
+  brandColor: {
+    type: String,
+    trim: true,
+    default: '#00ed64',
   }
 }, { timestamps: true });
 

@@ -16,6 +16,18 @@ const settingsSchema = new mongoose.Schema({
   campayPassword: {
     type: String,
     trim: true,
+  },
+  campayAppName: {
+    type: String,
+    trim: true,
+  },
+  campayBaseUrl: {
+    type: String,
+    trim: true,
+  },
+  campayWebhookUrl: {
+    type: String,
+    trim: true,
   }
 }, { timestamps: true });
 

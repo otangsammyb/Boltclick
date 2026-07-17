@@ -839,6 +839,9 @@ async function loadSettings() {
     // It comes back as ******** if set, indicating a password exists
     document.getElementById('campayPassword').placeholder = '******** (Keys stored securely)';
   }
+  if (res.data?.campayAppName) document.getElementById('campayAppName').value = res.data.campayAppName;
+  if (res.data?.campayBaseUrl) document.getElementById('campayBaseUrl').value = res.data.campayBaseUrl;
+  if (res.data?.campayWebhookUrl) document.getElementById('campayWebhookUrl').value = res.data.campayWebhookUrl;
 
   applyHeaderLogo(logoUrl, restaurantName);
 }
@@ -902,6 +905,9 @@ document.getElementById('campayForm')?.addEventListener('submit', async (e) => {
   
   const campayUsername = document.getElementById('campayUsername').value;
   const campayPassword = document.getElementById('campayPassword').value;
+  const campayAppName = document.getElementById('campayAppName').value;
+  const campayBaseUrl = document.getElementById('campayBaseUrl').value;
+  const campayWebhookUrl = document.getElementById('campayWebhookUrl').value;
 
   text.textContent = 'Saving...';
   btn.disabled = true;
@@ -910,7 +916,7 @@ document.getElementById('campayForm')?.addEventListener('submit', async (e) => {
     const res = await fetch(`${API_BASE}/settings/campay`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ campayUsername, campayPassword }),
+      body: JSON.stringify({ campayUsername, campayPassword, campayAppName, campayBaseUrl, campayWebhookUrl }),
     });
     const data = await res.json();
     

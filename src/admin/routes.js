@@ -657,7 +657,7 @@ router.get('/settings', authMiddleware, async (req, res) => {
   try {
     let settings = await Settings.findOne({ type: 'global' }).lean();
     if (!settings) {
-      settings = { campayUsername: '', campayPassword: '' };
+      settings = { campayUsername: '', campayPassword: '', campayAppName: '', campayBaseUrl: '', campayWebhookUrl: '' };
     }
     // Never send the password fully visible for security
     const sanitizedPassword = settings.campayPassword ? '********' : '';
@@ -665,7 +665,10 @@ router.get('/settings', authMiddleware, async (req, res) => {
       success: true,
       data: {
         campayUsername: settings.campayUsername || '',
-        campayPassword: sanitizedPassword
+        campayPassword: sanitizedPassword,
+        campayAppName: settings.campayAppName || '',
+        campayBaseUrl: settings.campayBaseUrl || '',
+        campayWebhookUrl: settings.campayWebhookUrl || ''
       }
     });
   } catch (err) {
@@ -675,7 +678,7 @@ router.get('/settings', authMiddleware, async (req, res) => {
 
 router.post('/settings/campay', authMiddleware, async (req, res) => {
   try {
-    const { campayUsername, campayPassword } = req.body;
+    const { campayUsername, campayPassword, campayAppName, campayBaseUrl, campayWebhookUrl } = req.body;
     let settings = await Settings.findOne({ type: 'global' });
     
     if (!settings) {
@@ -687,6 +690,9 @@ router.post('/settings/campay', authMiddleware, async (req, res) => {
     if (campayPassword && campayPassword !== '********') {
       settings.campayPassword = campayPassword.trim();
     }
+    if (campayAppName !== undefined) settings.campayAppName = campayAppName.trim();
+    if (campayBaseUrl !== undefined) settings.campayBaseUrl = campayBaseUrl.trim();
+    if (campayWebhookUrl !== undefined) settings.campayWebhookUrl = campayWebhookUrl.trim();
 
     await settings.save();
     

@@ -10,31 +10,37 @@ const Settings = require('../models/Settings');
 let cachedToken = null;
 let tokenExpiry = 0;
 
-// ── Authenticate & get token ─────────────────────────────────────────────────
-async function getToken() {
-  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
-
-  // 1. Fetch dynamic keys from Settings DB
-  let username = campay.username;
-  let password = campay.password;
-  
+// Helper to get unified config (DB overrides ENV)
+async function getCampayConfig() {
+  const config = { ...campay };
   try {
     const settings = await Settings.findOne({ type: 'global' });
-    if (settings && settings.campayUsername && settings.campayPassword) {
-      username = settings.campayUsername;
-      password = settings.campayPassword;
+    if (settings) {
+      if (settings.campayUsername) config.username = settings.campayUsername;
+      if (settings.campayPassword) config.password = settings.campayPassword;
+      if (settings.campayAppName) config.appName = settings.campayAppName;
+      if (settings.campayBaseUrl) config.baseUrl = settings.campayBaseUrl;
+      if (settings.campayWebhookUrl) config.webhookUrl = settings.campayWebhookUrl;
     }
   } catch (err) {
     logger.error('Failed to fetch CamPay settings from DB, falling back to ENV');
   }
+  return config;
+}
 
-  if (!username || !password) {
+// ── Authenticate & get token ─────────────────────────────────────────────────
+async function getToken() {
+  if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
+
+  const config = await getCampayConfig();
+
+  if (!config.username || !config.password) {
     throw new Error('CamPay credentials are not configured in Admin Settings or ENV');
   }
 
   const res = await axios.post(
-    `${campay.baseUrl}/token/`,
-    { username, password },
+    `${config.baseUrl}/token/`,
+    { username: config.username, password: config.password },
     { headers: { 'Content-Type': 'application/json' } }
   );
 
@@ -47,20 +53,22 @@ async function getToken() {
 // ── Initiate a collect (debit from customer phone) ──────────────────────────
 async function initiateCollection({ amount, currency = 'XAF', from, description, externalRef }) {
   const token = await getToken();
+  const config = await getCampayConfig();
+  
   const payload = {
     amount: String(amount),
     currency,
     from,
     description,
     external_reference: externalRef,
-    app_name: campay.appName,
-    redirect_url: campay.webhookUrl || '',
+    app_name: config.appName,
+    redirect_url: config.webhookUrl || '',
   };
 
   try {
     logger.debug('CamPay collect payload: ' + JSON.stringify(payload));
     const res = await axios.post(
-      `${campay.baseUrl}/collect/`,
+      `${config.baseUrl}/collect/`,
       payload,
       { headers: { Authorization: `Token ${token}`, 'Content-Type': 'application/json' } }
     );
@@ -76,8 +84,10 @@ async function initiateCollection({ amount, currency = 'XAF', from, description,
 // ── Check transaction status by reference ───────────────────────────────────
 async function checkStatus(reference) {
   const token = await getToken();
+  const config = await getCampayConfig();
+  
   const res = await axios.get(
-    `${campay.baseUrl}/transaction/${reference}/`,
+    `${config.baseUrl}/transaction/${reference}/`,
     { headers: { Authorization: `Token ${token}` } }
   );
   // status: SUCCESSFUL | FAILED | PENDING

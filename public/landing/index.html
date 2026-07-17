@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BoltClick — Order Smarter. Eat Better.</title>
-  <meta name="description" content="BoltClick lets your customers order food through WhatsApp in seconds. Zero app downloads, zero friction — just fast, beautiful food ordering." />
+  <title>BoltClick — WhatsApp Ordering Platform for Cameroon Restaurants</title>
+  <meta name="description" content="Turn WhatsApp into your full restaurant ordering system. Menus, payments, delivery tracking, and analytics — without a single app download. Built for Cameroon." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -12,250 +12,440 @@
 </head>
 <body>
 
-  <!-- ── NAVIGATION ─────────────────────────────────────────────────────────── -->
+  <!-- ── NAV ──────────────────────────────────────────────────────────────── -->
   <header class="nav" id="navbar">
     <div class="nav-inner">
       <a href="/" class="nav-logo">
-        <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+        <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
           <circle cx="16" cy="16" r="16" fill="#25D366"/>
           <path d="M9 23l1.5-5.5A7 7 0 1 1 14.5 22L9 23Z" fill="white"/>
         </svg>
-        <span>BoltClick</span>
+        <span>Bolt<span class="logo-bolt">Click</span></span>
       </a>
       <nav class="nav-links">
+        <a href="#how">How it works</a>
         <a href="#features">Features</a>
-        <a href="#how">How It Works</a>
         <a href="#pricing">Pricing</a>
-        <a href="/admin" class="nav-cta-outline">Admin Login</a>
-        <a href="#getstarted" class="nav-cta">Get Started →</a>
+        <a href="#signup">Integrate</a>
+        <a href="/admin" class="nav-cta">Admin Login →</a>
       </nav>
-      <button class="hamburger" id="hamburger" aria-label="Open menu">
+      <button class="hamburger" id="hamburger" aria-label="Menu">
         <span></span><span></span><span></span>
       </button>
     </div>
-    <!-- Mobile Drawer -->
     <div class="mobile-drawer" id="drawer">
+      <a href="#how">How it works</a>
       <a href="#features">Features</a>
-      <a href="#how">How It Works</a>
       <a href="#pricing">Pricing</a>
-      <a href="/admin">Admin Login</a>
-      <a href="#getstarted" class="mobile-cta">Get Started Free</a>
+      <a href="#signup">Integrate Now</a>
+      <a href="/admin" class="mobile-cta">Admin Login</a>
     </div>
   </header>
 
-  <!-- ── HERO ───────────────────────────────────────────────────────────────── -->
-  <section class="hero" id="hero">
-    <div class="hero-badge reveal-up">
-      <svg width="16" height="16" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="#25D366"/><path d="M9 23l1.5-5.5A7 7 0 1 1 14.5 22L9 23Z" fill="white"/></svg>
-      WhatsApp-native ordering — no app download needed
-    </div>
-    <h1 class="hero-title reveal-up" style="animation-delay:.1s">
-      The world's most<br />
-      <span class="gradient-text">natural way to order</span><br />
-      from your restaurant.
-    </h1>
-    <p class="hero-sub reveal-up" style="animation-delay:.2s">
-      BoltClick turns WhatsApp into your restaurant's full ordering system.
-      Customers browse the menu, choose items, pay, and track delivery —
-      without ever leaving the app they already love.
-    </p>
-    <div class="hero-actions reveal-up" style="animation-delay:.3s">
-      <a href="#getstarted" class="btn-primary" id="getstarted">
-        Start Free Trial
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
-      <a href="#how" class="btn-ghost">
-        <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5Z"/></svg>
-        See how it works
-      </a>
+  <!-- ── HERO ─────────────────────────────────────────────────────────────── -->
+  <section class="hero reveal" id="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#25D366"/><path d="M9 23l1.5-5.5A7 7 0 1 1 14.5 22L9 23Z" fill="white"/></svg>
+        WhatsApp-Native · Built for Cameroon
+      </div>
+      <h1 class="hero-title">
+        The <span class="accent-word">smartest</span> way to<br>
+        run a restaurant<br>
+        in <span class="cta-word">Cameroon</span>.
+      </h1>
+      <p class="hero-sub">
+        BoltClick turns WhatsApp into a complete ordering system. Customers browse your menu, pay via MoMo or Orange Money, and track delivery — all without leaving the app they already use every day.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-cta" id="openSignup">
+          <svg width="20" height="20" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="rgba(255,255,255,.25)"/><path d="M9 23l1.5-5.5A7 7 0 1 1 14.5 22L9 23Z" fill="white"/></svg>
+          Connect My Restaurant
+        </button>
+        <a href="#how" class="btn-outline-light">
+          <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5Z"/></svg>
+          See how it works
+        </a>
+      </div>
+      <div style="display:flex;gap:32px;margin-top:44px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:28px;font-weight:900;color:#fff;">100%</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;">No app download</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.1);"></div>
+        <div>
+          <div style="font-size:28px;font-weight:900;color:#fff;">&lt;10 min</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;">Setup time</div>
+        </div>
+        <div style="width:1px;background:rgba(255,255,255,.1);"></div>
+        <div>
+          <div style="font-size:28px;font-weight:900;color:#fff;">MoMo+OM</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:2px;">Payments built-in</div>
+        </div>
+      </div>
     </div>
 
-    <!-- Phone mockup -->
-    <div class="hero-phones reveal-up" style="animation-delay:.5s">
-      <div class="phone-wrapper">
-        <div class="phone-frame">
-          <div class="phone-notch"></div>
-          <div class="chat-window">
-            <div class="chat-header">
-              <div class="chat-avatar">🍔</div>
-              <div>
-                <div class="chat-name">Burger Palace</div>
-                <div class="chat-status">online</div>
+    <!-- Phone Visual -->
+    <div class="hero-visual">
+      <div style="position:relative;display:inline-block;">
+        <!-- Stat Badges -->
+        <div class="stat-badge">
+          <div class="stat-icon">💰</div>
+          <div>
+            <div class="stat-val">+47K FCFA</div>
+            <div class="stat-text">Revenue today</div>
+          </div>
+        </div>
+        <div class="stat-badge">
+          <div class="stat-icon">📦</div>
+          <div>
+            <div class="stat-val">12 Orders</div>
+            <div class="stat-text">Last 2 hours</div>
+          </div>
+        </div>
+
+        <div class="floating-phone">
+          <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="chat-window">
+              <div class="chat-header">
+                <div class="chat-avatar">🍔</div>
+                <div>
+                  <div class="chat-name">Burger Palace</div>
+                  <div class="chat-status">● online</div>
+                </div>
               </div>
-            </div>
-            <div class="chat-messages" id="chatMessages">
-              <div class="msg bot" style="animation-delay:.8s">
-                👋 Welcome to <strong>Burger Palace!</strong><br />What would you like today?
-              </div>
-              <div class="msg bot" style="animation-delay:1.2s">
-                🍔 Classic Burger — 3,500 FCFA<br />
-                🍟 Loaded Fries — 1,500 FCFA<br />
-                🥤 Cola — 800 FCFA
-              </div>
-              <div class="msg user" style="animation-delay:1.8s">Classic Burger x2 + Fries</div>
-              <div class="msg bot" style="animation-delay:2.4s">
-                ✅ Your order total is <strong>8,500 FCFA</strong>.<br />
-                Tap to pay with Mobile Money 👇
-              </div>
-              <div class="msg bot pay" style="animation-delay:2.8s">
-                <span>💳 Pay 8,500 FCFA via MoMo</span>
+              <div class="chat-msgs">
+                <div class="msg bot msg-anim">
+                  👋 Bienvenue chez <strong>Burger Palace!</strong><br/>Que voulez-vous commander?
+                </div>
+                <div class="msg bot msg-anim" style="animation-delay:.5s">
+                  🍔 Classic — <strong>3 500 FCFA</strong><br/>🍟 Frites — <strong>1 500 FCFA</strong><br/>🥤 Cola — <strong>800 FCFA</strong>
+                </div>
+                <div class="msg user msg-anim" style="animation-delay:1s">Classic x2 + Frites</div>
+                <div class="msg bot msg-anim" style="animation-delay:1.5s">
+                  ✅ Total: <strong>8 500 FCFA</strong><br/>Payez avec MoMo 👇
+                </div>
+                <div class="msg pay msg-anim" style="animation-delay:2s">📲 Payer 8 500 FCFA via MoMo</div>
               </div>
             </div>
           </div>
         </div>
-        <div class="phone-glow"></div>
       </div>
     </div>
   </section>
 
-  <!-- ── LOGOS / TRUST BAR ───────────────────────────────────────────────────── -->
-  <section class="trust-bar">
-    <p class="trust-label">Powering restaurants all over Cameroon</p>
-    <div class="logos-row">
-      <span>🍕 Pizza Palace</span>
-      <span>🍗 Chicken King</span>
-      <span>🍜 Noodle House</span>
-      <span>🥗 Salad Bar</span>
-      <span>🍣 Sushi Stop</span>
+  <!-- ── TICKER ────────────────────────────────────────────────────────────── -->
+  <div class="trust-bar">
+    <div class="ticker-track" id="ticker">
+      <span class="ticker-item">🍔 Burger Palace, Douala</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🍕 Pizza Express, Yaoundé</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🍗 Chicken House, Bafoussam</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🥗 Sain & Bon, Douala</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🍜 Noodle Bar, Limbé</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">☕ Café du Coin, Kribi</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🥩 Grill Nation, Ngaoundéré</span>
+      <span class="ticker-dot"></span>
+      <!-- duplicate for seamless loop -->
+      <span class="ticker-item">🍔 Burger Palace, Douala</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🍕 Pizza Express, Yaoundé</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🍗 Chicken House, Bafoussam</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🥗 Sain & Bon, Douala</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🍜 Noodle Bar, Limbé</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">☕ Café du Coin, Kribi</span>
+      <span class="ticker-dot"></span>
+      <span class="ticker-item">🥩 Grill Nation, Ngaoundéré</span>
+      <span class="ticker-dot"></span>
     </div>
-  </section>
-
-  <!-- ── FEATURES ───────────────────────────────────────────────────────────── -->
-  <section class="features" id="features">
-    <div class="section-badge reveal-up">Why BoltClick?</div>
-    <h2 class="section-title reveal-up">Everything your restaurant needs.<br />Nothing it doesn't.</h2>
-    <p class="section-sub reveal-up">From ordering to payment to delivery — all inside WhatsApp.</p>
-
-    <div class="features-grid">
-      <div class="feature-card reveal-up">
-        <div class="feat-icon" style="background:#DCFCE7;color:#16a34a">
-          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 12l2 2 4-4"/><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
-        </div>
-        <h3>Zero-friction ordering</h3>
-        <p>Customers order in WhatsApp — no app download, no signup, no password. Just message and eat.</p>
-      </div>
-      <div class="feature-card reveal-up" style="animation-delay:.1s">
-        <div class="feat-icon" style="background:#FEF9C3;color:#b45309">
-          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        </div>
-        <h3>Real-time order tracking</h3>
-        <p>Customers track their delivery live on an interactive map. Drivers update their location in real time.</p>
-      </div>
-      <div class="feature-card reveal-up" style="animation-delay:.2s">
-        <div class="feat-icon" style="background:#EDE9FE;color:#7c3aed">
-          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-        </div>
-        <h3>Mobile Money payments</h3>
-        <p>MTN MoMo and Orange Money built-in. Customers pay instantly inside the chat — no redirect needed.</p>
-      </div>
-      <div class="feature-card reveal-up" style="animation-delay:.3s">
-        <div class="feat-icon" style="background:#FEE2E2;color:#dc2626">
-          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>
-        </div>
-        <h3>Powerful admin dashboard</h3>
-        <p>Manage your menu, live orders, bookings, drivers, and analytics all from one elegant dashboard.</p>
-      </div>
-      <div class="feature-card reveal-up" style="animation-delay:.4s">
-        <div class="feat-icon" style="background:#DCFCE7;color:#22c55e">
-          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        </div>
-        <h3>Multi-language support</h3>
-        <p>BoltClick speaks both English and French — perfect for Cameroon's bilingual customer base.</p>
-      </div>
-      <div class="feature-card reveal-up" style="animation-delay:.5s">
-        <div class="feat-icon" style="background:#FEF3C7;color:#f59e0b">
-          <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2Z"/></svg>
-        </div>
-        <h3>Ratings & Insights</h3>
-        <p>Collect customer ratings after every order and view rich analytics — daily revenue, popular items, and more.</p>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <!-- ── HOW IT WORKS ───────────────────────────────────────────────────────── -->
-  <section class="how" id="how">
-    <div class="section-badge reveal-up">Simple Flow</div>
-    <h2 class="section-title reveal-up">How it works</h2>
-    <p class="section-sub reveal-up">For your customer, it's as easy as sending a message.</p>
-    <div class="steps">
-      <div class="step reveal-up">
+  <div id="how" style="background:rgba(22,33,62,.6);padding:2px 0;">
+    <div class="steps-grid reveal">
+      <div class="step-card">
         <div class="step-num">01</div>
-        <div class="step-body">
-          <h3>Scan or tap to chat</h3>
-          <p>Place a QR code on your tables or share your WhatsApp link. One scan opens the chat.</p>
-        </div>
+        <h3>Connect your WhatsApp</h3>
+        <p>Use the Embedded Signup below to link your WhatsApp Business number to BoltClick in under 5 minutes — no coding needed.</p>
       </div>
-      <div class="step-connector"><div class="connector-line"></div></div>
-      <div class="step reveal-up" style="animation-delay:.15s">
+      <div class="step-card">
         <div class="step-num">02</div>
-        <div class="step-body">
-          <h3>Browse & add to cart</h3>
-          <p>The bot serves an interactive menu. Customers pick items and quantities in seconds.</p>
-        </div>
+        <h3>Build your menu</h3>
+        <p>Add your dishes, set prices, upload photos, and organize by category from your personalized admin dashboard.</p>
       </div>
-      <div class="step-connector"><div class="connector-line"></div></div>
-      <div class="step reveal-up" style="animation-delay:.3s">
+      <div class="step-card">
         <div class="step-num">03</div>
-        <div class="step-body">
-          <h3>Pay with Mobile Money</h3>
-          <p>A single tap initiates the MoMo or Orange Money prompt. Confirmation is instant.</p>
-        </div>
+        <h3>Share your QR code</h3>
+        <p>Print your branded QR code and place it on tables, in your window, or share the link on social media.</p>
       </div>
-      <div class="step-connector"><div class="connector-line"></div></div>
-      <div class="step reveal-up" style="animation-delay:.45s">
+      <div class="step-card">
         <div class="step-num">04</div>
-        <div class="step-body">
-          <h3>Track live delivery</h3>
-          <p>Customers get a live map link to track their rider — right in WhatsApp.</p>
+        <h3>Get paid instantly</h3>
+        <p>Customers pay with MTN MoMo or Orange Money directly in WhatsApp. Funds land in your account in seconds.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── FEATURES BENTO ─────────────────────────────────────────────────────── -->
+  <section class="section" id="features">
+    <div class="eyebrow reveal">Why BoltClick</div>
+    <h2 class="section-title reveal">Everything a modern restaurant<br>in Cameroon needs.</h2>
+    <div class="bento-grid reveal">
+      <div class="bento-card wide">
+        <div class="bento-icon" style="background:rgba(37,211,102,.15);">📱</div>
+        <h3>Zero-friction WhatsApp ordering</h3>
+        <p>No app download. No account creation. Customers simply scan your QR code, browse the menu, and order — entirely inside WhatsApp. Friction is the enemy of revenue. We eliminated it.</p>
+      </div>
+      <div class="bento-card accent">
+        <div class="bento-icon" style="background:rgba(255,255,255,.08);">💳</div>
+        <h3>Mobile Money built-in</h3>
+        <p>MTN MoMo and Orange Money integrated out of the box. No third-party checkout pages — customers pay in a single tap inside the chat.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-icon" style="background:rgba(255,107,53,.12);">📊</div>
+        <h3>Real-time analytics dashboard</h3>
+        <p>Daily revenue, popular items, customer trends — all in one beautiful, real-time dashboard built specifically for restaurant owners.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-icon" style="background:rgba(37,211,102,.12);">🗺️</div>
+        <h3>Live delivery tracking</h3>
+        <p>Customers receive a live map link to track their rider in real time — straight inside the WhatsApp chat.</p>
+      </div>
+      <div class="bento-card wide accent">
+        <div class="bento-icon" style="background:rgba(255,255,255,.08);">🌍</div>
+        <h3>Bilingual — English & French</h3>
+        <p>BoltClick detects the customer's language preference and responds accordingly. Perfect for Cameroon's bilingual reality. Switch languages mid-conversation without losing context.</p>
+      </div>
+      <div class="bento-card">
+        <div class="bento-icon" style="background:rgba(255,107,53,.12);">⭐</div>
+        <h3>Post-order ratings</h3>
+        <p>Collect customer feedback after every delivery. Monitor your score in real time and act on it fast.</p>
+      </div>
+      <div class="bento-card cta-card">
+        <div>
+          <div style="font-size:32px;margin-bottom:12px;">🚀</div>
+          <h3>Ready in under 10 minutes</h3>
+          <p>No technical skills required. If you can use WhatsApp, you can run BoltClick.</p>
+        </div>
+        <button class="btn-cta" onclick="document.getElementById('openSignup').click()" style="margin-top:20px;">
+          Get started free →
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── WHATSAPP EMBEDDED SIGNUP ─────────────────────────────────────────── -->
+  <section class="signup-section reveal" id="signup">
+    <div class="signup-inner">
+      <div>
+        <div class="signup-tag">
+          <svg width="14" height="14" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#25D366"/><path d="M9 23l1.5-5.5A7 7 0 1 1 14.5 22L9 23Z" fill="white"/></svg>
+          WhatsApp Business Integration
+        </div>
+        <h2 class="signup-title">Connect your restaurant<br>to BoltClick in minutes.</h2>
+        <p class="signup-sub">
+          Use the official Meta WhatsApp Embedded Signup to link your WhatsApp Business phone number. No developer needed — just click the green button and follow the guided steps.
+        </p>
+        <ul class="signup-checklist">
+          <li><span class="check-icon">✓</span><span>Your WhatsApp Business profile is created automatically</span></li>
+          <li><span class="check-icon">✓</span><span>Customers can message your number to order</span></li>
+          <li><span class="check-icon">✓</span><span>Your admin dashboard is activated immediately</span></li>
+          <li><span class="check-icon">✓</span><span>100% secure — powered by Meta's official Business API</span></li>
+        </ul>
+        <button class="wa-signup-btn" id="openSignup">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.524 5.862L.054 23.65a.5.5 0 0 0 .614.614l5.788-1.47A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zM9.13 7.23c.18-.45.37-.46.72-.46.32 0 .6.01.85.73.27.8.92 2.62.99 2.81.07.19.12.41.01.66-.12.26-.18.42-.36.65-.18.23-.37.51-.53.69-.18.19-.36.39-.15.76.21.37.91 1.5 1.96 2.43 1.34 1.19 2.47 1.56 2.83 1.73.36.17.57.14.78-.08.21-.22.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1 1 2.46 1.17.36.17.6.26.69.41.09.15.09.84-.21 1.65-.3.81-1.77 1.55-2.44 1.65-.67.1-1.3.47-4.4-.91-3.1-1.38-5.02-4.43-5.17-4.64-.15-.21-1.24-1.65-1.24-3.14s.78-2.23 1.06-2.54c.28-.31.6-.39.8-.39z"/>
+          </svg>
+          Connect with WhatsApp Business
+        </button>
+        <p class="signup-note">
+          By connecting, you agree to our
+          <a href="#">Terms of Service</a> and Meta's
+          <a href="https://www.facebook.com/legal/terms/businesstools" target="_blank">Business Tools Terms</a>.
+        </p>
+      </div>
+
+      <!-- Lead Capture Form -->
+      <div class="onboard-card" id="onboardForm">
+        <h3>Start your free integration</h3>
+        <p class="sub">Tell us about your restaurant and we'll get you set up.</p>
+        <form id="restaurantForm" novalidate>
+          <div class="field">
+            <label>Restaurant Name</label>
+            <input type="text" id="rName" placeholder="e.g. Burger Palace" required />
+          </div>
+          <div class="field">
+            <label>Owner / Contact Name</label>
+            <input type="text" id="rOwner" placeholder="e.g. Jean-Pierre Mballa" required />
+          </div>
+          <div class="field">
+            <label>WhatsApp Number</label>
+            <input type="tel" id="rPhone" placeholder="+237 6XX XXX XXX" required />
+          </div>
+          <div class="field">
+            <label>City</label>
+            <select id="rCity">
+              <option value="">Select city…</option>
+              <option>Douala</option>
+              <option>Yaoundé</option>
+              <option>Bafoussam</option>
+              <option>Limbé</option>
+              <option>Kribi</option>
+              <option>Ngaoundéré</option>
+              <option>Bamenda</option>
+              <option>Autre / Other</option>
+            </select>
+          </div>
+          <button type="submit" class="submit-btn">
+            Register My Restaurant →
+          </button>
+        </form>
+        <div class="form-success" id="formSuccess">
+          🎉 Thank you! We'll contact you within 24 hours to complete your setup.
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── CTA BANNER ─────────────────────────────────────────────────────────── -->
-  <section class="cta-banner reveal-up">
-    <div class="cta-inner">
-      <h2>Ready to transform your restaurant?</h2>
-      <p>Join hundreds of restaurants already using BoltClick. Set up in under 10 minutes.</p>
-      <a href="/admin" class="btn-primary-dark">
-        Access Admin Dashboard
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-      </a>
+  <!-- ── PRICING ───────────────────────────────────────────────────────────── -->
+  <section class="section" id="pricing">
+    <div class="eyebrow reveal">Pricing</div>
+    <h2 class="section-title reveal">Simple, honest pricing.</h2>
+    <p class="section-sub reveal">No hidden fees. No long-term contracts. Start free and grow.</p>
+    <div class="pricing-grid reveal">
+      <div class="price-card">
+        <div class="price-name">Starter</div>
+        <div class="price-amt">Free</div>
+        <div class="price-period">forever</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span> WhatsApp bot ordering</li>
+          <li><span class="check">✓</span> Up to 50 orders/month</li>
+          <li><span class="check">✓</span> Basic admin dashboard</li>
+          <li><span class="check">✓</span> Mobile Money payments</li>
+          <li><span class="cross">✗</span> <span style="opacity:.4">Delivery tracking</span></li>
+          <li><span class="cross">✗</span> <span style="opacity:.4">Analytics reports</span></li>
+        </ul>
+        <button class="price-btn outline" onclick="document.getElementById('openSignup').click()">Get Started Free</button>
+      </div>
+
+      <div class="price-card featured">
+        <div class="price-badge">Most Popular</div>
+        <div class="price-name">Professional</div>
+        <div class="price-amt">15K <span style="font-size:22px;font-weight:500">FCFA</span></div>
+        <div class="price-period">per month</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span> Unlimited orders</li>
+          <li><span class="check">✓</span> Full admin dashboard</li>
+          <li><span class="check">✓</span> Live delivery map</li>
+          <li><span class="check">✓</span> Analytics & reports</li>
+          <li><span class="check">✓</span> Table QR codes</li>
+          <li><span class="check">✓</span> Driver management</li>
+        </ul>
+        <button class="price-btn solid" onclick="document.getElementById('openSignup').click()">Connect My Restaurant</button>
+      </div>
+
+      <div class="price-card">
+        <div class="price-name">Enterprise</div>
+        <div class="price-amt">Custom</div>
+        <div class="price-period">volume pricing</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span> Everything in Pro</li>
+          <li><span class="check">✓</span> Multi-branch support</li>
+          <li><span class="check">✓</span> Dedicated support</li>
+          <li><span class="check">✓</span> Custom integrations</li>
+          <li><span class="check">✓</span> SLA guarantee</li>
+          <li><span class="check">✓</span> White-label option</li>
+        </ul>
+        <button class="price-btn cta" onclick="document.getElementById('openSignup').click()">Contact Sales</button>
+      </div>
     </div>
   </section>
 
-  <!-- ── FOOTER ─────────────────────────────────────────────────────────────── -->
+  <!-- ── FOOTER ────────────────────────────────────────────────────────────── -->
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <a href="/" class="nav-logo">
+        <a href="/" class="nav-logo" style="margin-bottom:12px;display:inline-flex;">
           <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
             <circle cx="16" cy="16" r="16" fill="#25D366"/>
             <path d="M9 23l1.5-5.5A7 7 0 1 1 14.5 22L9 23Z" fill="white"/>
           </svg>
-          <span>BoltClick</span>
+          <span>Bolt<span class="logo-bolt">Click</span></span>
         </a>
-        <p>WhatsApp-native food ordering for modern restaurants.</p>
+        <p>WhatsApp-native food ordering for Cameroon's restaurants. Modern, bilingual, and built for MoMo payments.</p>
       </div>
       <div class="footer-links">
         <div class="footer-col">
           <h4>Product</h4>
+          <a href="#how">How it works</a>
           <a href="#features">Features</a>
-          <a href="#how">How it Works</a>
           <a href="#pricing">Pricing</a>
+          <a href="#signup">Integrate</a>
         </div>
         <div class="footer-col">
           <h4>Restaurant</h4>
           <a href="/admin">Admin Login</a>
-          <a href="/admin">Dashboard</a>
+          <a href="/super-admin">Super Admin</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="#">Terms of Service</a>
+          <a href="#">Privacy Policy</a>
+          <a href="#">Cookie Policy</a>
         </div>
       </div>
     </div>
     <div class="footer-bottom">
       <span>© 2026 BoltClick. All rights reserved.</span>
-      <span>Built with ❤️ for Cameroonian restaurants</span>
+      <span>Made with ❤️ for Cameroonian restaurants 🇨🇲</span>
     </div>
   </footer>
+
+  <!-- ── WHATSAPP EMBEDDED SIGNUP MODAL ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="waModal">
+    <div class="modal-box">
+      <button class="modal-close" id="closeModal">✕</button>
+      <h2>Connect via WhatsApp Business</h2>
+      <p>
+        Click the button below to launch Meta's official WhatsApp Embedded Signup flow.
+        You'll be guided step-by-step to link your WhatsApp Business number to BoltClick.
+        The process takes about 3–5 minutes.
+      </p>
+      <div id="waSignupContainer">
+        <!-- Meta WhatsApp Embedded Signup Button -->
+        <button
+          id="waEmbeddedBtn"
+          style="
+            background:#25D366; color:#fff; border:none; cursor:pointer;
+            font-size:15px; font-weight:700;
+            padding:14px 28px; border-radius:12px;
+            display:flex; align-items:center; gap:12px;
+            transition:background .2s;
+          "
+          onmouseover="this.style.background='#1aad54'"
+          onmouseout="this.style.background='#25D366'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="white" viewBox="0 0 24 24">
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.555 4.122 1.524 5.862L.054 23.65a.5.5 0 0 0 .614.614l5.788-1.47A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zM9.13 7.23c.18-.45.37-.46.72-.46.32 0 .6.01.85.73.27.8.92 2.62.99 2.81.07.19.12.41.01.66-.12.26-.18.42-.36.65-.18.23-.37.51-.53.69-.18.19-.36.39-.15.76.21.37.91 1.5 1.96 2.43 1.34 1.19 2.47 1.56 2.83 1.73.36.17.57.14.78-.08.21-.22.9-1.05 1.14-1.41.24-.36.48-.3.81-.18.33.12 2.1 1 2.46 1.17.36.17.6.26.69.41.09.15.09.84-.21 1.65-.3.81-1.77 1.55-2.44 1.65-.67.1-1.3.47-4.4-.91-3.1-1.38-5.02-4.43-5.17-4.64-.15-.21-1.24-1.65-1.24-3.14s.78-2.23 1.06-2.54c.28-.31.6-.39.8-.39z"/>
+          </svg>
+          Launch WhatsApp Signup
+        </button>
+      </div>
+      <p style="font-size:12px;color:rgba(255,255,255,.35);margin-top:16px;text-align:center;">
+        Powered by Meta's official Business API · Secure & verified
+      </p>
+    </div>
+  </div>
 
   <script src="js/main.js"></script>
 </body>

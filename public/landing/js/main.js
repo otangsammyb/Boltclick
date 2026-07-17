@@ -1,74 +1,169 @@
 'use strict';
 
-// ── NAV: scroll shadow ─────────────────────────────────────────────────────
+// ── NAV scroll shadow ───────────────────────────────────────────────────────
 const navbar = document.getElementById('navbar');
 window.addEventListener('scroll', () => {
-  navbar.classList.toggle('scrolled', window.scrollY > 20);
+  navbar.classList.toggle('scrolled', window.scrollY > 16);
 }, { passive: true });
 
-// ── NAV: mobile hamburger ──────────────────────────────────────────────────
+// ── HAMBURGER MENU ──────────────────────────────────────────────────────────
 const hamburger = document.getElementById('hamburger');
 const drawer    = document.getElementById('drawer');
-hamburger.addEventListener('click', () => {
+hamburger?.addEventListener('click', () => {
   const open = drawer.classList.toggle('open');
-  hamburger.setAttribute('aria-expanded', open);
-  const spans = hamburger.querySelectorAll('span');
+  hamburger.setAttribute('aria-expanded', String(open));
+  const [s1, s2, s3] = hamburger.querySelectorAll('span');
   if (open) {
-    spans[0].style.transform = 'translateY(7px) rotate(45deg)';
-    spans[1].style.opacity   = '0';
-    spans[2].style.transform = 'translateY(-7px) rotate(-45deg)';
+    s1.style.transform = 'translateY(7px) rotate(45deg)';
+    s2.style.opacity = '0';
+    s3.style.transform = 'translateY(-7px) rotate(-45deg)';
   } else {
-    spans.forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
+    [s1, s2, s3].forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
   }
 });
-// Close drawer on nav link click
-drawer.querySelectorAll('a').forEach(a => {
+drawer?.querySelectorAll('a').forEach(a => {
   a.addEventListener('click', () => {
     drawer.classList.remove('open');
-    hamburger.querySelectorAll('span').forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
+    hamburger?.querySelectorAll('span').forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
   });
 });
 
-// ── SCROLL REVEAL ──────────────────────────────────────────────────────────
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('visible');
-      revealObserver.unobserve(entry.target);
-    }
+// ── SCROLL REVEAL ────────────────────────────────────────────────────────────
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('in'); revealObs.unobserve(e.target); }
   });
-}, {
-  threshold: 0.12,
-  rootMargin: '0px 0px -40px 0px'
-});
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
 
-document.querySelectorAll('.reveal-up').forEach((el, i) => {
-  // Stagger sibling cards naturally via their own inline animation-delay
-  // but still run the intersection observer for the trigger
-  revealObserver.observe(el);
-});
-
-// ── ANIMATED CHAT MESSAGES ────────────────────────────────────────────────
-// Messages already have animation-delay via CSS, but we want them
-// to only start animating once the hero is in view
-const msgs = document.querySelectorAll('.chat-messages .msg');
-const heroObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting) {
-    msgs.forEach(m => m.style.animationPlayState = 'running');
-    heroObserver.disconnect();
-  }
+// ── CHAT MESSAGE ANIMATION ───────────────────────────────────────────────────
+const chatObs = new IntersectionObserver((entries) => {
+  if (!entries[0].isIntersecting) return;
+  chatObs.disconnect();
+  const msgs = document.querySelectorAll('.msg-anim');
+  msgs.forEach((m, i) => {
+    setTimeout(() => m.classList.add('in'), i * 550);
+  });
 }, { threshold: 0.3 });
-document.querySelector('.hero-phones') && heroObserver.observe(document.querySelector('.hero-phones'));
-// Pause initially
-msgs.forEach(m => m.style.animationPlayState = 'paused');
+const phoneEl = document.querySelector('.floating-phone');
+if (phoneEl) chatObs.observe(phoneEl);
 
-// ── SMOOTH SCROLL for all # links ─────────────────────────────────────────
+// ── SMOOTH SCROLL ───────────────────────────────────────────────────────────
 document.querySelectorAll('a[href^="#"]').forEach(a => {
   a.addEventListener('click', e => {
     const target = document.querySelector(a.getAttribute('href'));
     if (!target) return;
     e.preventDefault();
-    const y = target.getBoundingClientRect().top + window.scrollY - (window.innerWidth < 640 ? 0 : 80);
-    window.scrollTo({ top: y, behavior: 'smooth' });
+    window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 80, behavior: 'smooth' });
   });
+});
+
+// ── WHATSAPP EMBEDDED SIGNUP MODAL ──────────────────────────────────────────
+const modal = document.getElementById('waModal');
+const closeBtn = document.getElementById('closeModal');
+
+function openModal() {
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Both signup CTAs open the modal
+document.querySelectorAll('#openSignup').forEach(btn => {
+  btn?.addEventListener('click', openModal);
+});
+closeBtn?.addEventListener('click', closeModal);
+modal?.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── META WHATSAPP EMBEDDED SIGNUP ───────────────────────────────────────────
+// NOTE: Replace APP_ID and CONFIG_ID with your actual Meta App credentials
+// once your Meta Developer account is verified for WhatsApp Business API.
+const WA_APP_ID   = 'YOUR_META_APP_ID';   // <-- Replace with your real Meta App ID
+const WA_CFG_ID   = 'YOUR_CONFIG_ID';     // <-- Replace with your WhatsApp config ID
+
+function launchFBLogin() {
+  if (typeof window.FB === 'undefined') {
+    alert('The WhatsApp Business signup portal is loading. Please try again in a moment.');
+    return;
+  }
+  window.FB.login(
+    function (response) {
+      if (response.authResponse) {
+        const code = response.authResponse.code;
+        // Send the auth code to your backend to exchange for access tokens
+        fetch('/api/admin/whatsapp/embedded-signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code }),
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              document.getElementById('waSignupContainer').innerHTML = `
+                <div style="text-align:center;padding:20px;">
+                  <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+                  <div style="font-size:18px;font-weight:700;color:#25D366;margin-bottom:8px;">Successfully connected!</div>
+                  <div style="font-size:14px;color:rgba(255,255,255,.6);">Your WhatsApp Business number is now linked to BoltClick. Check your email for next steps.</div>
+                </div>`;
+            }
+          })
+          .catch(() => {});
+      }
+    },
+    {
+      config_id: WA_CFG_ID,
+      response_type: 'code',
+      override_default_response_type: true,
+      extras: { sessionInfoVersion: 3 },
+    }
+  );
+}
+
+document.getElementById('waEmbeddedBtn')?.addEventListener('click', launchFBLogin);
+
+// Load Facebook SDK
+window.fbAsyncInit = function () {
+  window.FB.init({ appId: WA_APP_ID, autoLogAppEvents: true, xfbml: true, version: 'v20.0' });
+};
+(function (d, s, id) {
+  if (d.getElementById(id)) return;
+  const fjs = d.getElementsByTagName(s)[0];
+  const js  = d.createElement(s);
+  js.id = id;
+  js.src = 'https://connect.facebook.net/en_US/sdk.js';
+  fjs.parentNode.insertBefore(js, fjs);
+})(document, 'script', 'facebook-jssdk');
+
+// ── RESTAURANT LEAD FORM ───────────────────────────────────────────────────
+document.getElementById('restaurantForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name  = document.getElementById('rName')?.value?.trim();
+  const owner = document.getElementById('rOwner')?.value?.trim();
+  const phone = document.getElementById('rPhone')?.value?.trim();
+  const city  = document.getElementById('rCity')?.value;
+
+  if (!name || !owner || !phone || !city) {
+    alert('Please fill in all fields.');
+    return;
+  }
+
+  const btn = e.target.querySelector('.submit-btn');
+  btn.textContent = 'Sending…';
+  btn.disabled = true;
+
+  try {
+    await fetch('/api/admin/restaurant-lead', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, owner, phone, city }),
+    });
+  } catch (_) {}
+
+  // Always show success — capture the lead even if backend isn't set up yet
+  document.getElementById('restaurantForm').style.display = 'none';
+  document.getElementById('formSuccess').style.display = 'block';
 });

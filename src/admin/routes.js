@@ -13,6 +13,8 @@ const { GridFSBucket } = require('mongodb');
 const { uploadFile, getReadStream, downloadFile, deleteFile } = require('../utils/fileStorage');
 
 const authMiddleware = require('./auth');
+const { superAdminOnly } = require('./auth');
+const Commission = require('../models/Commission');
 const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
 const Booking = require('../models/Booking');
@@ -34,14 +36,23 @@ const upload = multer({ storage: memoryStorage, limits: { fileSize: 5 * 1024 * 1
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  if (email !== auth.adminEmail || !(await bcrypt.compare(password, await bcrypt.hash(auth.adminPassword, 10)))) {
-    // Simple comparison (password stored in env, not hashed at rest in this setup)
-    if (email !== auth.adminEmail || password !== auth.adminPassword) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
+
+  // Super admin check (platform owner)
+  if (
+    auth.superAdminEmail &&
+    email === auth.superAdminEmail &&
+    password === auth.superAdminPassword
+  ) {
+    const token = jwt.sign({ email, role: 'superAdmin' }, auth.jwtSecret, { expiresIn: '12h' });
+    return res.json({ success: true, token, role: 'superAdmin' });
+  }
+
+  // Regular admin check
+  if (email !== auth.adminEmail || password !== auth.adminPassword) {
+    return res.status(401).json({ success: false, message: 'Invalid credentials' });
   }
   const token = jwt.sign({ email, role: 'admin' }, auth.jwtSecret, { expiresIn: '12h' });
-  res.json({ success: true, token });
+  res.json({ success: true, token, role: 'admin' });
 });
 
 // ── PUBLIC SETTINGS ────────────────────────────────────────────────────────────
@@ -571,6 +582,72 @@ router.post('/drivers', async (req, res) => {
 router.delete('/drivers/:id', async (req, res) => {
   await Driver.findByIdAndDelete(req.params.id);
   res.json({ success: true });
+});
+
+// ── SUPER ADMIN — COMMISSION STATS ───────────────────────────────────────────
+router.get('/commissions/stats', superAdminOnly, async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Today boundaries (Africa/Douala = UTC+1)
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: 'Africa/Douala' });
+    const todayStart = new Date(`${todayStr}T00:00:00+01:00`);
+    const todayEnd   = new Date(`${todayStr}T23:59:59.999+01:00`);
+
+    // This month boundaries
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+    const [totalAgg, todayAgg, monthAgg, orderCount] = await Promise.all([
+      Commission.aggregate([{ $match: { status: 'EARNED' } }, { $group: { _id: null, sum: { $sum: '$commissionAmount' } } }]),
+      Commission.aggregate([{ $match: { status: 'EARNED', earnedAt: { $gte: todayStart, $lte: todayEnd } } }, { $group: { _id: null, sum: { $sum: '$commissionAmount' } } }]),
+      Commission.aggregate([{ $match: { status: 'EARNED', earnedAt: { $gte: monthStart, $lte: monthEnd } } }, { $group: { _id: null, sum: { $sum: '$commissionAmount' } } }]),
+      Commission.countDocuments({ status: 'EARNED' }),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        totalEarned:   totalAgg[0]?.sum  || 0,
+        todayEarned:   todayAgg[0]?.sum  || 0,
+        monthEarned:   monthAgg[0]?.sum  || 0,
+        totalOrders:   orderCount,
+        commissionRate: 1.5,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── SUPER ADMIN — COMMISSION LIST ────────────────────────────────────────────
+router.get('/commissions', superAdminOnly, async (req, res) => {
+  try {
+    const { page, limit, from, to } = req.query;
+    const pageNum  = Math.max(1, parseInt(page)  || 1);
+    const limitNum = Math.max(1, parseInt(limit) || 30);
+
+    const filter = { status: 'EARNED' };
+    if (from || to) {
+      filter.earnedAt = {};
+      if (from) filter.earnedAt.$gte = new Date(from);
+      if (to)   filter.earnedAt.$lte = new Date(to);
+    }
+
+    const [commissions, total] = await Promise.all([
+      Commission.find(filter)
+        .sort({ earnedAt: -1 })
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
+        .populate('orderId', 'phone total fulfillmentType createdAt')
+        .lean(),
+      Commission.countDocuments(filter),
+    ]);
+
+    res.json({ success: true, data: commissions, total, page: pageNum });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 module.exports = router;

@@ -162,11 +162,12 @@ const apiLimiter = rateLimit({
 app.use('/api', apiLimiter);
 
 // ── Static files ──────────────────────────────────────────────────────────────
-app.use('/uploads',  express.static(path.join(__dirname, '../public/uploads')));
-app.use('/receipts', express.static(path.join(__dirname, '../public/receipts')));
-app.use('/admin',    express.static(path.join(__dirname, '../public/admin')));
-app.use('/delivery', express.static(path.join(__dirname, '../public/delivery')));
-app.use('/health',   express.static(path.join(__dirname, '../public/health')));
+app.use('/uploads',     express.static(path.join(__dirname, '../public/uploads')));
+app.use('/receipts',    express.static(path.join(__dirname, '../public/receipts')));
+app.use('/admin',       express.static(path.join(__dirname, '../public/admin')));
+app.use('/delivery',    express.static(path.join(__dirname, '../public/delivery')));
+app.use('/health',      express.static(path.join(__dirname, '../public/health')));
+app.use('/super-admin', express.static(path.join(__dirname, '../public/super-admin')));
 
 // ── Routes ────────────────────────────────────────────────────────────────────
 app.use('/webhook', webhookRouter);
@@ -251,6 +252,9 @@ app.get('/admin/*', (req, res) => {
 app.get('/delivery/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/delivery/index.html'));
 });
+app.get('/super-admin/*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/super-admin/index.html'));
+});
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => res.status(404).json({ message: 'Not found' }));
@@ -323,8 +327,9 @@ async function start() {
   await connectDB();
   server.listen(port, () => {
     logger.info(`🚀 Restaurant bot running on port ${port} [${nodeEnv}]`);
-    logger.info(`📊 Admin dashboard: http://localhost:${port}/admin`);
-    logger.info(`🚗 Delivery app:    http://localhost:${port}/delivery`);
+    logger.info(`📊 Admin dashboard:       http://localhost:${port}/admin`);
+    logger.info(`⚡ Super admin dashboard: http://localhost:${port}/super-admin`);
+    logger.info(`🚗 Delivery app:          http://localhost:${port}/delivery`);
   });
 
   // Re-schedule any pending follow-ups after restart

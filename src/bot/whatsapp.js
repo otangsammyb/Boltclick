@@ -18,7 +18,7 @@ const headers = {
 // ── Base send ────────────────────────────────────────────────────────────────
 async function send(payload) {
   try {
-    logger.debug('Outgoing WhatsApp Paylod: ' + JSON.stringify(payload));
+    logger.debug('Outgoing WhatsApp Payload: ' + JSON.stringify(payload));
     const res = await axios.post(BASE_URL, payload, { headers });
     return res.data;
   } catch (err) {
@@ -65,10 +65,8 @@ async function uploadMedia(source, type = 'application/pdf', filename = 'documen
   const form = new FormData();
   
   if (typeof source === 'string') {
-    // source is a file path
     form.append('file', fs.createReadStream(source));
   } else {
-    // source is a buffer
     form.append('file', source, { filename, contentType: type });
   }
   
@@ -107,7 +105,12 @@ async function sendLocalDocument(to, localPath, filename = 'receipt.pdf') {
 }
 
 // ── Send interactive button message (up to 3 buttons) ───────────────────────
-async function sendButtons(to, bodyText, buttons, headerText = '') {
+// Options: { headerText, footerText }
+async function sendButtons(to, bodyText, buttons, options = {}) {
+  const { headerText = '', footerText = '' } = typeof options === 'string'
+    ? { headerText: options } // backward compat: old signature had headerText as 4th arg string
+    : options;
+
   const payload = {
     messaging_product: 'whatsapp',
     to,
@@ -123,26 +126,43 @@ async function sendButtons(to, bodyText, buttons, headerText = '') {
       },
     },
   };
+
   if (headerText) {
-    payload.interactive.header = { type: 'text', text: headerText };
+    payload.interactive.header = { type: 'text', text: headerText.substring(0, 60) };
   }
+  if (footerText) {
+    payload.interactive.footer = { text: footerText.substring(0, 60) };
+  }
+
   return send(payload);
 }
 
 // ── Send interactive list message (up to 10 items) ──────────────────────────
-async function sendList(to, bodyText, buttonLabel, sections) {
+// Options: { footerText }
+async function sendList(to, bodyText, buttonLabel, sections, options = {}) {
+  const { footerText = '', headerText = '' } = options;
+
+  const interactive = {
+    type: 'list',
+    body: { text: bodyText },
+    action: {
+      button: buttonLabel.substring(0, 20),
+      sections,
+    },
+  };
+
+  if (headerText) {
+    interactive.header = { type: 'text', text: headerText.substring(0, 60) };
+  }
+  if (footerText) {
+    interactive.footer = { text: footerText.substring(0, 60) };
+  }
+
   return send({
     messaging_product: 'whatsapp',
     to,
     type: 'interactive',
-    interactive: {
-      type: 'list',
-      body: { text: bodyText },
-      action: {
-        button: buttonLabel.substring(0, 20),
-        sections,
-      },
-    },
+    interactive,
   });
 }
 
@@ -150,7 +170,7 @@ async function sendList(to, bodyText, buttonLabel, sections) {
 async function markRead(messageId) {
   try {
     await axios.post(
-      BASE_URL.replace('/messages', '/messages'),
+      BASE_URL,
       { messaging_product: 'whatsapp', status: 'read', message_id: messageId },
       { headers }
     );

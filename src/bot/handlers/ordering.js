@@ -5,7 +5,9 @@ const wa = require('../whatsapp');
 const sm = require('../stateManager');
 const strings = require('../language/strings');
 const MenuItem = require('../../models/MenuItem');
-const { restaurant, baseUrl } = require('../../config/env');
+const { restaurant } = require('../../config/env');
+
+const FOOTER = 'Powered by BoltClick';
 
 async function showMenu(phone, lang) {
   const s = strings[lang];
@@ -22,19 +24,22 @@ async function showMenu(phone, lang) {
 
   // Group items by category
   const categories = {};
-  items.forEach((item, idx) => {
+  items.forEach((item) => {
     const cat = item.category || 'Main';
     if (!categories[cat]) categories[cat] = [];
     categories[cat].push({
       id: `ITEM_${item._id}`,
-      title: lang === 'fr' ? item.nameFr : item.nameEn,
+      title: (lang === 'fr' ? item.nameFr : item.nameEn).substring(0, 24),
       description: `${item.price.toLocaleString()} FCFA`,
     });
   });
 
   const sections = Object.entries(categories).map(([title, rows]) => ({ title, rows }));
 
-  await wa.sendList(phone, s.menuPrompt, s.selectItems, sections);
+  await wa.sendList(phone, s.menuPrompt, s.selectItems, sections, {
+    headerText: restaurant.name,
+    footerText: FOOTER,
+  });
   await sm.updateSession(phone, { state: 'ORDERING' });
 }
 
@@ -61,7 +66,7 @@ async function handleItemSelect(phone, lang, session, itemId) {
   await wa.sendButtons(phone, cartText, [
     { id: 'CART_ADD_MORE', title: s.btnAddMore },
     { id: 'CART_CHECKOUT', title: s.btnCheckout },
-  ]);
+  ], { footerText: FOOTER });
 }
 
 async function handleCheckout(phone, lang, session) {
@@ -73,7 +78,7 @@ async function handleCheckout(phone, lang, session) {
     { id: 'FULFILL_DELIVERY', title: s.btnDelivery },
     { id: 'FULFILL_PICKUP', title: s.btnPickup },
     { id: 'FULFILL_IN_RESTAURANT', title: s.btnInRestaurant },
-  ]);
+  ], { headerText: restaurant.name, footerText: FOOTER });
   await sm.updateSession(phone, { state: 'DELIVERY_CHOICE' });
 }
 

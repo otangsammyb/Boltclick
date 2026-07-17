@@ -8,6 +8,7 @@ const { detectCarrier } = require('../../utils/carrier');
 const campay = require('../../payments/campay');
 const Order = require('../../models/Order');
 const Transaction = require('../../models/Transaction');
+const Commission = require('../../models/Commission');
 const User = require('../../models/User');
 const generateReceipt = require('../../pdf/receipt');
 const smartRouting = require('../../routing/smartRouting');
@@ -16,6 +17,9 @@ const { restaurant, baseUrl } = require('../../config/env');
 const logger = require('../../utils/logger');
 const { downloadFile } = require('../../utils/fileStorage');
 const statsManager = require('../../utils/statsManager');
+
+const COMMISSION_RATE = 0.015; // 1.5%
+const FOOTER = 'Powered by BoltClick';
 
 async function handlePaymentStart(phone, lang, session, paymentPhone) {
   const s = strings[lang];
@@ -41,6 +45,8 @@ async function handlePaymentStart(phone, lang, session, paymentPhone) {
     subtotal: i.price * i.quantity,
   }));
 
+  const commissionAmount = parseFloat((total * COMMISSION_RATE).toFixed(2));
+
   const order = await Order.create({
     userId: user._id,
     phone,
@@ -48,6 +54,7 @@ async function handlePaymentStart(phone, lang, session, paymentPhone) {
     subtotal,
     deliveryFee,
     total,
+    commissionAmount,
     status: 'PENDING',
     fulfillmentType: session.data?.deliveryChoice || 'pickup',
     tableNumber: session.data?.tableNumber || null,
@@ -108,7 +115,7 @@ async function handlePaymentStart(phone, lang, session, paymentPhone) {
   await wa.sendButtons(phone, s.paymentPushed(carrier, total), [
     { id: 'PAY_CONFIRM', title: s.btnPaid },
     { id: 'PAY_CANCEL', title: s.btnCancel },
-  ]);
+  ], { headerText: restaurant.name, footerText: FOOTER });
 }
 
 async function handlePaymentConfirmation(phone, lang, session) {
@@ -127,7 +134,7 @@ async function handlePaymentConfirmation(phone, lang, session) {
     return wa.sendButtons(phone, s.paymentFailed, [
       { id: 'PAY_RETRY', title: s.btnRetry },
       { id: 'PAY_CANCEL', title: s.btnCancel },
-    ]);
+    ], { footerText: FOOTER });
   }
 
   if (paymentStatus.status === 'SUCCESSFUL') {
@@ -145,6 +152,22 @@ async function handlePaymentConfirmation(phone, lang, session) {
       { orderId: pendingOrderId },
       { status: 'SUCCESSFUL', campayTransactionId: paymentStatus.operator_tx_id }
     );
+
+    // Record platform commission (1.5%)
+    try {
+      await Commission.create({
+        orderId: order._id,
+        restaurantPhone: restaurant.phone || '',
+        orderTotal: order.total,
+        commissionRate: COMMISSION_RATE,
+        commissionAmount: order.commissionAmount,
+        status: 'EARNED',
+        earnedAt: new Date(),
+      });
+    } catch (err) {
+      logger.error('Commission recording error: ' + err.message);
+      // Non-fatal — order still proceeds
+    }
 
     // Update user stats
     await User.findOneAndUpdate(
@@ -175,7 +198,7 @@ async function handlePaymentConfirmation(phone, lang, session) {
     await wa.sendButtons(phone, s.paymentFailed, [
       { id: 'PAY_RETRY', title: s.btnRetry },
       { id: 'PAY_CANCEL', title: s.btnCancel },
-    ]);
+    ], { footerText: FOOTER });
   }
 }
 

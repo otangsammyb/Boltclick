@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BoltClick — Super Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/super-admin/css/dashboard.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════ LOGIN SCREEN -->
+  <div id="loginScreen" class="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">BoltClick</span>
+        <span class="logo-badge">Super Admin</span>
+      </div>
+      <p class="login-sub">Platform Owner Portal — Restricted Access</p>
+      <form id="loginForm" autocomplete="off">
+        <div class="field-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" placeholder="superadmin@boltclick.io" required />
+        </div>
+        <div class="field-group">
+          <label for="password">Password</label>
+          <div class="pass-wrap">
+            <input type="password" id="password" placeholder="••••••••••" required />
+            <button type="button" class="show-pass" onclick="togglePass()">👁</button>
+          </div>
+        </div>
+        <div id="loginError" class="error-msg hidden"></div>
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span id="loginBtnText">Sign In</span>
+          <span id="loginSpinner" class="spinner hidden"></span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ DASHBOARD -->
+  <div id="dashboard" class="hidden">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="logo-icon">⚡</span>
+        <div>
+          <div class="brand-name">BoltClick</div>
+          <div class="brand-role">Super Admin</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-section="overview">
+          <span class="nav-icon">📊</span> Overview
+        </a>
+        <a href="#" class="nav-item" data-section="commissions">
+          <span class="nav-icon">💰</span> Commissions
+        </a>
+      </nav>
+      <button class="btn-logout" onclick="logout()">🚪 Sign Out</button>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <div>
+          <h1 class="page-title" id="pageTitle">Platform Overview</h1>
+          <p class="page-sub" id="pageSub">Live commission earnings across all restaurants</p>
+        </div>
+        <div class="topbar-right">
+          <div class="refresh-btn" onclick="loadAll()" title="Refresh">🔄 Refresh</div>
+          <div class="live-dot"></div>
+          <span class="live-label">Live</span>
+        </div>
+      </header>
+
+      <!-- ── Overview Section ── -->
+      <section id="sectionOverview">
+        <!-- KPI cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-total">
+            <div class="kpi-icon">💎</div>
+            <div class="kpi-info">
+              <div class="kpi-label">Total Commission Earned</div>
+              <div class="kpi-value" id="kpiTotal">—</div>
+              <div class="kpi-sub" id="kpiRate">@ 1.5% per order</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-today">
+            <div class="kpi-icon">📅</div>
+            <div class="kpi-info">
+              <div class="kpi-label">Today's Earnings</div>
+              <div class="kpi-value" id="kpiToday">—</div>
+              <div class="kpi-sub">Since midnight (Douala time)</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-month">
+            <div class="kpi-icon">📆</div>
+            <div class="kpi-info">
+              <div class="kpi-label">This Month's Earnings</div>
+              <div class="kpi-value" id="kpiMonth">—</div>
+              <div class="kpi-sub" id="kpiMonthName">Current month</div>
+            </div>
+          </div>
+          <div class="kpi-card kpi-orders">
+            <div class="kpi-icon">🧾</div>
+            <div class="kpi-info">
+              <div class="kpi-label">Commissionable Orders</div>
+              <div class="kpi-value" id="kpiOrders">—</div>
+              <div class="kpi-sub">Total paid orders</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Commission Trend — Last 30 Days</h3>
+            <div class="chart-legend">
+              <span class="legend-dot" style="background:#7c3aed"></span> Daily Commission (FCFA)
+            </div>
+          </div>
+          <canvas id="commissionChart" height="90"></canvas>
+        </div>
+      </section>
+
+      <!-- ── Commissions Section ── -->
+      <section id="sectionCommissions" class="hidden">
+        <div class="table-card">
+          <div class="table-header">
+            <h3>Commission Ledger</h3>
+            <div class="table-filters">
+              <input type="date" id="filterFrom" class="filter-input" />
+              <span>to</span>
+              <input type="date" id="filterTo" class="filter-input" />
+              <button class="btn-filter" onclick="applyFilter()">Apply</button>
+              <button class="btn-clear" onclick="clearFilter()">Clear</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table id="commissionTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Order ID</th>
+                  <th>Customer Phone</th>
+                  <th>Fulfilment</th>
+                  <th>Order Total</th>
+                  <th>Commission (1.5%)</th>
+                  <th>Date & Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="commissionBody">
+                <tr><td colspan="8" class="loading-row">Loading commission records…</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/super-admin/js/dashboard.js"></script>
+</body>
+</html>

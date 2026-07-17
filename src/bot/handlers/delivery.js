@@ -9,6 +9,8 @@ const { restaurant } = require('../../config/env');
 const { handlePaymentStart } = require('./payment');
 const { totalTables } = restaurant;
 
+const FOOTER = 'Powered by BoltClick';
+
 async function handleDeliveryChoice(phone, lang, choice) {
   const s = strings[lang];
 

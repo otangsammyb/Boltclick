@@ -37,6 +37,7 @@ const orderSchema = new mongoose.Schema(
     followUpSent: { type: Boolean, default: false },
     deliveredAt: { type: Date, default: null },
     lang: { type: String, enum: ['en', 'fr'], default: 'en' },
+    commissionAmount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

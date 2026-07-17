@@ -1,5 +1,6 @@
 /**
  * Admin JWT Authentication Middleware
+ * Supports two roles: 'admin' (restaurant admin) and 'superAdmin' (platform owner)
  */
 const jwt = require('jsonwebtoken');
 const { auth } = require('../config/env');
@@ -20,4 +21,16 @@ function authMiddleware(req, res, next) {
   }
 }
 
+/**
+ * Middleware that allows only superAdmin role.
+ * Must be used AFTER authMiddleware.
+ */
+function superAdminOnly(req, res, next) {
+  if (req.admin?.role !== 'superAdmin') {
+    return res.status(403).json({ success: false, message: 'Access denied — super admin only' });
+  }
+  next();
+}
+
 module.exports = authMiddleware;
+module.exports.superAdminOnly = superAdminOnly;

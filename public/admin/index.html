@@ -576,6 +576,37 @@
             <div id="logoUploadMsg" style="font-size:13px;display:none;"></div>
           </form>
         </div>
+      <div class="section-card" style="margin-top: 24px;">
+        <div class="section-header">
+          <h3>Payment Gateway (CamPay)</h3>
+        </div>
+        <div style="padding: 24px;">
+          <div style="font-size:13px;color:var(--muted);max-width:600px;margin-bottom:24px;">
+            Configure your own CamPay API keys here. When customers pay via Mobile Money or Orange Money, 100% of the funds will flow directly into your own CamPay merchant account instantly. The platform 1.5% commission will be recorded as an invoice.
+          </div>
+          <form id="campayForm" style="display:flex;flex-direction:column;gap:16px;max-width:480px;">
+            <div class="form-group">
+              <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;display:block;">
+                CamPay Username
+              </label>
+              <input type="text" id="campayUsername" required placeholder="Enter CamPay API Username"
+                style="background:var(--dark);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);width:100%;" />
+            </div>
+            <div class="form-group">
+              <label style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;display:block;">
+                CamPay Password
+              </label>
+              <input type="password" id="campayPassword" placeholder="Leave blank to keep unchanged"
+                style="background:var(--dark);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);width:100%;" />
+            </div>
+            <button type="submit" class="btn-primary" id="campaySaveBtn"
+              style="width:auto;padding:12px 28px;height:44px;display:inline-flex;align-items:center;gap:9px;font-size:14px;border-radius:10px;margin-top:4px;">
+              <i class="hgi hgi-stroke hgi-floppy-disk" style="font-size:18px;"></i>
+              <span id="campaySaveText">Save Gateway Keys</span>
+            </button>
+            <div id="campaySaveMsg" style="font-size:13px;display:none;"></div>
+          </form>
+        </div>
       </div>
     </div>
 

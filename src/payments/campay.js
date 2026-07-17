@@ -5,6 +5,7 @@
 const axios = require('axios');
 const { campay } = require('../config/env');
 const logger = require('../utils/logger');
+const Settings = require('../models/Settings');
 
 let cachedToken = null;
 let tokenExpiry = 0;
@@ -13,15 +14,33 @@ let tokenExpiry = 0;
 async function getToken() {
   if (cachedToken && Date.now() < tokenExpiry) return cachedToken;
 
+  // 1. Fetch dynamic keys from Settings DB
+  let username = campay.username;
+  let password = campay.password;
+  
+  try {
+    const settings = await Settings.findOne({ type: 'global' });
+    if (settings && settings.campayUsername && settings.campayPassword) {
+      username = settings.campayUsername;
+      password = settings.campayPassword;
+    }
+  } catch (err) {
+    logger.error('Failed to fetch CamPay settings from DB, falling back to ENV');
+  }
+
+  if (!username || !password) {
+    throw new Error('CamPay credentials are not configured in Admin Settings or ENV');
+  }
+
   const res = await axios.post(
     `${campay.baseUrl}/token/`,
-    { username: campay.username, password: campay.password },
+    { username, password },
     { headers: { 'Content-Type': 'application/json' } }
   );
 
   cachedToken = res.data.token;
   tokenExpiry = Date.now() + 55 * 60 * 1000; // 55 min
-  logger.debug('CamPay token refreshed');
+  logger.debug('CamPay token refreshed dynamically');
   return cachedToken;
 }
 
@@ -65,4 +84,10 @@ async function checkStatus(reference) {
   return res.data;
 }
 
-module.exports = { initiateCollection, checkStatus };
+function clearTokenCache() {
+  cachedToken = null;
+  tokenExpiry = 0;
+  logger.info('CamPay token cache cleared (settings updated)');
+}
+
+module.exports = { initiateCollection, checkStatus, clearTokenCache };

@@ -6,6 +6,7 @@
   <title>BoltClick — Super Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
   <link rel="stylesheet" href="/super-admin/css/dashboard.css" />
 </head>
 <body>
@@ -14,7 +15,7 @@
   <div id="loginScreen" class="login-overlay">
     <div class="login-card">
       <div class="login-logo">
-        <span class="logo-icon">⚡</span>
+        <span class="logo-icon"><i class="hgi hgi-stroke hgi-energy"></i></span>
         <span class="logo-text">BoltClick</span>
         <span class="logo-badge">Super Admin</span>
       </div>
@@ -28,7 +29,7 @@
           <label for="password">Password</label>
           <div class="pass-wrap">
             <input type="password" id="password" placeholder="••••••••••" required />
-            <button type="button" class="show-pass" onclick="togglePass()">👁</button>
+            <button type="button" class="show-pass" onclick="togglePass()"><i class="hgi hgi-stroke hgi-view"></i></button>
           </div>
         </div>
         <div id="loginError" class="error-msg hidden"></div>
@@ -46,7 +47,7 @@
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <span class="logo-icon">⚡</span>
+        <span class="logo-icon" style="color:var(--amber)"><i class="hgi hgi-stroke hgi-energy"></i></span>
         <div>
           <div class="brand-name">BoltClick</div>
           <div class="brand-role">Super Admin</div>
@@ -54,13 +55,13 @@
       </div>
       <nav class="sidebar-nav">
         <a href="#" class="nav-item active" data-section="overview">
-          <span class="nav-icon">📊</span> Overview
+          <span class="nav-icon"><i class="hgi hgi-stroke hgi-dashboard-square-01"></i></span> Overview
         </a>
         <a href="#" class="nav-item" data-section="commissions">
-          <span class="nav-icon">💰</span> Commissions
+          <span class="nav-icon"><i class="hgi hgi-stroke hgi-money-01"></i></span> Commissions
         </a>
       </nav>
-      <button class="btn-logout" onclick="logout()">🚪 Sign Out</button>
+      <button class="btn-logout" onclick="logout()"><i class="hgi hgi-stroke hgi-logout-04"></i> Sign Out</button>
     </aside>
 
     <!-- Main content -->
@@ -73,7 +74,7 @@
           <p class="page-sub" id="pageSub">Live commission earnings across all restaurants</p>
         </div>
         <div class="topbar-right">
-          <div class="refresh-btn" onclick="loadAll()" title="Refresh">🔄 Refresh</div>
+          <div class="refresh-btn" onclick="loadAll()" title="Refresh"><i class="hgi hgi-stroke hgi-refresh-02"></i> Refresh</div>
           <div class="live-dot"></div>
           <span class="live-label">Live</span>
         </div>
@@ -84,7 +85,7 @@
         <!-- KPI cards -->
         <div class="kpi-grid">
           <div class="kpi-card kpi-total">
-            <div class="kpi-icon">💎</div>
+            <div class="kpi-icon"><i class="hgi hgi-stroke hgi-diamond-01"></i></div>
             <div class="kpi-info">
               <div class="kpi-label">Total Commission Earned</div>
               <div class="kpi-value" id="kpiTotal">—</div>
@@ -92,7 +93,7 @@
             </div>
           </div>
           <div class="kpi-card kpi-today">
-            <div class="kpi-icon">📅</div>
+            <div class="kpi-icon"><i class="hgi hgi-stroke hgi-calendar-01"></i></div>
             <div class="kpi-info">
               <div class="kpi-label">Today's Earnings</div>
               <div class="kpi-value" id="kpiToday">—</div>
@@ -100,7 +101,7 @@
             </div>
           </div>
           <div class="kpi-card kpi-month">
-            <div class="kpi-icon">📆</div>
+            <div class="kpi-icon"><i class="hgi hgi-stroke hgi-calendar-add-01"></i></div>
             <div class="kpi-info">
               <div class="kpi-label">This Month's Earnings</div>
               <div class="kpi-value" id="kpiMonth">—</div>
@@ -108,7 +109,7 @@
             </div>
           </div>
           <div class="kpi-card kpi-orders">
-            <div class="kpi-icon">🧾</div>
+            <div class="kpi-icon"><i class="hgi hgi-stroke hgi-receipt-01"></i></div>
             <div class="kpi-info">
               <div class="kpi-label">Commissionable Orders</div>
               <div class="kpi-value" id="kpiOrders">—</div>

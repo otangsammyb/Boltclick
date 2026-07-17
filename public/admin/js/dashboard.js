@@ -831,6 +831,15 @@ async function loadSettings() {
     removeBtn.style.display = 'none';
   }
 
+  // Populate CamPay Settings
+  if (res.data?.campayUsername) {
+    document.getElementById('campayUsername').value = res.data.campayUsername;
+  }
+  if (res.data?.campayPassword) {
+    // It comes back as ******** if set, indicating a password exists
+    document.getElementById('campayPassword').placeholder = '******** (Keys stored securely)';
+  }
+
   applyHeaderLogo(logoUrl, restaurantName);
 }
 
@@ -881,6 +890,48 @@ document.getElementById('logoRemoveBtn')?.addEventListener('click', async () => 
   });
   applyHeaderLogo(null);
   loadSettings();
+});
+
+// Update CamPay Settings
+document.getElementById('campayForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const btn = document.getElementById('campaySaveBtn');
+  const msg = document.getElementById('campaySaveMsg');
+  const text = document.getElementById('campaySaveText');
+  
+  const campayUsername = document.getElementById('campayUsername').value;
+  const campayPassword = document.getElementById('campayPassword').value;
+
+  text.textContent = 'Saving...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/settings/campay`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ campayUsername, campayPassword }),
+    });
+    const data = await res.json();
+    
+    if (data.success) {
+      msg.textContent = '\u2705 Payment keys saved securely!';
+      msg.style.color = 'var(--green)';
+      msg.style.display = 'block';
+      document.getElementById('campayPassword').value = ''; // clear input
+      loadSettings();
+      setTimeout(() => { msg.style.display = 'none'; }, 4000);
+    } else {
+      throw new Error(data.message || 'Save failed');
+    }
+  } catch (err) {
+    msg.textContent = '\u274c ' + err.message;
+    msg.style.color = 'var(--red)';
+    msg.style.display = 'block';
+  } finally {
+    text.textContent = 'Save Gateway Keys';
+    btn.disabled = false;
+  }
 });
 
 // ── Bootstrap header logo on page load ───────────────────────────────────────

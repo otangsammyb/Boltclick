@@ -14,6 +14,7 @@ const { uploadFile, getReadStream, downloadFile, deleteFile } = require('../util
 
 const authMiddleware = require('./auth');
 const { superAdminOnly } = require('./auth');
+const Settings = require('../models/Settings');
 const Commission = require('../models/Commission');
 const MenuItem = require('../models/MenuItem');
 const Order = require('../models/Order');
@@ -645,6 +646,55 @@ router.get('/commissions', superAdminOnly, async (req, res) => {
     ]);
 
     res.json({ success: true, data: commissions, total, page: pageNum });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
+
+router.get('/settings', authMiddleware, async (req, res) => {
+  try {
+    let settings = await Settings.findOne({ type: 'global' }).lean();
+    if (!settings) {
+      settings = { campayUsername: '', campayPassword: '' };
+    }
+    // Never send the password fully visible for security
+    const sanitizedPassword = settings.campayPassword ? '********' : '';
+    res.json({
+      success: true,
+      data: {
+        campayUsername: settings.campayUsername || '',
+        campayPassword: sanitizedPassword
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/settings/campay', authMiddleware, async (req, res) => {
+  try {
+    const { campayUsername, campayPassword } = req.body;
+    let settings = await Settings.findOne({ type: 'global' });
+    
+    if (!settings) {
+      settings = new Settings({ type: 'global' });
+    }
+
+    if (campayUsername !== undefined) settings.campayUsername = campayUsername.trim();
+    // Only update password if a new one is explicitly provided (not just '********')
+    if (campayPassword && campayPassword !== '********') {
+      settings.campayPassword = campayPassword.trim();
+    }
+
+    await settings.save();
+    
+    // Invalidate the active token immediately to ensure next payment uses new keys
+    const { clearTokenCache } = require('../payments/campay');
+    clearTokenCache();
+
+    res.json({ success: true, message: 'Settings saved successfully' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

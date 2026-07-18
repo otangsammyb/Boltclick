@@ -84,6 +84,7 @@ async function dispatch(body) {
   const s = strings[lang];
 
   // Global cancel / restart / stop keywords — work from ANY state
+  const lowerText = text.toLowerCase();
   const RESET_WORDS = [
     'cancel', 'annuler',
     'menu',

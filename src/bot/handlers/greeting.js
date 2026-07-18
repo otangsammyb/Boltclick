@@ -34,15 +34,23 @@ async function handleLangSelect(phone, selectedId) {
 
 async function showMainMenu(phone, lang) {
   const s = strings[lang];
-  await wa.sendButtons(phone, s.mainMenu, [
-    { id: 'MENU_ORDER', title: s.btnOrder },
-    { id: 'MENU_BOOK', title: s.btnBook },
-  ], { headerText: restaurant.name, footerText: FOOTER });
-  // Second message for remaining options (WhatsApp max 3 buttons per message)
-  await wa.sendButtons(phone, '─────────────────────', [
-    { id: 'MENU_USUAL', title: s.btnUsual },
-    { id: 'MENU_HUMAN', title: s.btnHuman },
-  ], { footerText: FOOTER });
+  await wa.sendList(
+    phone,
+    s.mainMenu,
+    '📋 Options',
+    [
+      {
+        title: 'Menu',
+        rows: [
+          { id: 'MENU_ORDER', title: s.btnOrder, description: '' },
+          { id: 'MENU_BOOK', title: s.btnBook, description: '' },
+          { id: 'MENU_USUAL', title: s.btnUsual, description: '' },
+          { id: 'MENU_HUMAN', title: s.btnHuman, description: '' },
+        ],
+      },
+    ],
+    { headerText: restaurant.name, footerText: FOOTER }
+  );
   await sm.updateSession(phone, { state: 'MAIN_MENU' });
 }
 

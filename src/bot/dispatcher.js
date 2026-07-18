@@ -131,12 +131,11 @@ async function dispatch(body) {
     }
 
     case 'MAIN_MENU':
-      if (buttonId === 'MENU_ORDER') return showMenu(phone, lang);
-      if (buttonId === 'MENU_BOOK') return handleBookingStart(phone, lang);
-      if (buttonId === 'MENU_USUAL') return handleTheUsual(phone, lang);
-      if (buttonId === 'MENU_HUMAN') return handleHandoff(phone, lang);
-      // User typed instead of tapping a button — re-show the main menu
-      return showMainMenu(phone, lang);
+      if (listId === 'MENU_ORDER' || buttonId === 'MENU_ORDER') return showMenu(phone, lang);
+      if (listId === 'MENU_BOOK' || buttonId === 'MENU_BOOK') return handleBookingStart(phone, lang);
+      if (listId === 'MENU_USUAL' || buttonId === 'MENU_USUAL') return handleTheUsual(phone, lang);
+      if (listId === 'MENU_HUMAN' || buttonId === 'MENU_HUMAN') return handleHandoff(phone, lang);
+      return wa.sendText(phone, s.invalidInput);
 
     case 'ORDERING':
       if (listId && listId.startsWith('ITEM_')) {
@@ -155,8 +154,7 @@ async function dispatch(body) {
       if (buttonId === 'FULFILL_DELIVERY' || buttonId === 'FULFILL_PICKUP' || buttonId === 'FULFILL_IN_RESTAURANT') {
         return handleDeliveryChoice(phone, lang, buttonId);
       }
-      // Re-send checkout prompt so user can tap the right button
-      return handleCheckout(phone, lang, session);
+      return wa.sendText(phone, s.invalidInput);
 
     case 'AWAITING_LOCATION':
       if (type === 'location' && location) {

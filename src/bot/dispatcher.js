@@ -141,7 +141,8 @@ async function dispatch(body) {
       if (listId === 'MENU_BOOK' || buttonId === 'MENU_BOOK') return handleBookingStart(phone, lang);
       if (listId === 'MENU_USUAL' || buttonId === 'MENU_USUAL') return handleTheUsual(phone, lang);
       if (listId === 'MENU_HUMAN' || buttonId === 'MENU_HUMAN') return handleHandoff(phone, lang);
-      return wa.sendText(phone, s.invalidInput);
+      // Re-prompt main menu instead of invalid input
+      return showMainMenu(phone, lang);
 
     case 'ORDERING':
       if (listId && listId.startsWith('ITEM_')) {
@@ -152,7 +153,8 @@ async function dispatch(body) {
         const freshSession = await sm.getSession(phone);
         return handleCheckout(phone, lang, freshSession);
       }
-      return wa.sendText(phone, s.invalidInput);
+      // Re-prompt ordering options instead of invalid input
+      return showMenu(phone, lang);
 
     case 'DELIVERY_CHOICE':
       if (
@@ -162,7 +164,12 @@ async function dispatch(body) {
       ) {
         return handleDeliveryChoice(phone, lang, buttonId);
       }
-      return wa.sendText(phone, s.invalidInput);
+      // Re-prompt delivery choices instead of invalid input
+      return wa.sendButtons(phone, s.askDelivery, [
+        { id: 'FULFILL_DELIVERY', title: s.btnDelivery },
+        { id: 'FULFILL_PICKUP', title: s.btnPickup },
+        { id: 'FULFILL_IN_RESTAURANT', title: s.btnInRestaurant }
+      ], { footerText: 'Powered by BoltClick' });
 
     case 'AWAITING_LOCATION':
       if (type === 'location' && location) {
@@ -210,7 +217,11 @@ async function dispatch(body) {
         await sm.resetSession(phone);
         return showMainMenu(phone, lang);
       }
-      return wa.sendText(phone, s.invalidInput);
+      // Re-prompt booking confirmation instead of invalid input
+      return wa.sendButtons(phone, s.bookingConfirmPrompt, [
+        { id: 'BOOKING_YES', title: s.btnConfirm },
+        { id: 'BOOKING_NO', title: s.btnCancel }
+      ], { footerText: 'Powered by BoltClick' });
 
     case 'THE_USUAL':
       return handleTheUsualConfirm(phone, lang, session, buttonId);

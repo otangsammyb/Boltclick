@@ -326,6 +326,24 @@ app.set('io', io);
 // ── Start ─────────────────────────────────────────────────────────────────────
 async function start() {
   await connectDB();
+  
+  // Load settings into memory from MongoDB so `.env` is bypassed
+  try {
+    const Settings = require('./models/Settings');
+    const { restaurant } = require('./config/env');
+    const settings = await Settings.findOne({ type: 'global' });
+    if (settings) {
+      if (settings.restaurantName) restaurant.name = settings.restaurantName;
+      if (settings.restaurantAddress) restaurant.address = settings.restaurantAddress;
+      if (settings.restaurantPhone) restaurant.phone = settings.restaurantPhone;
+      if (settings.totalTables) restaurant.totalTables = settings.totalTables;
+      if (settings.deliveryFeePerKm) restaurant.deliveryFeePerKm = settings.deliveryFeePerKm;
+      logger.info('Restaurant config loaded from Database');
+    }
+  } catch (err) {
+    logger.error('Failed to load DB settings: ' + err.message);
+  }
+
   server.listen(port, () => {
     logger.info(`🚀 Restaurant bot running on port ${port} [${nodeEnv}]`);
     logger.info(`📊 Admin dashboard:       http://localhost:${port}/admin`);

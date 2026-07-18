@@ -29,6 +29,26 @@ const settingsSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  restaurantName: {
+    type: String,
+    trim: true,
+  },
+  restaurantAddress: {
+    type: String,
+    trim: true,
+  },
+  restaurantPhone: {
+    type: String,
+    trim: true,
+  },
+  totalTables: {
+    type: Number,
+    default: 10,
+  },
+  deliveryFeePerKm: {
+    type: Number,
+    default: 200,
+  },
   brandColor: {
     type: String,
     trim: true,

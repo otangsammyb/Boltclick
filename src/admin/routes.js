@@ -671,10 +671,41 @@ router.get('/settings', authMiddleware, async (req, res) => {
         campayWebhookUrl: settings.campayWebhookUrl || '',
         brandColor: settings.brandColor || '#00ed64',
         logoUrl: settings.logoUrl || '',
-        restaurantName: settings.restaurantName || '',
-        whatsappNumber: settings.whatsappNumber || ''
+        restaurantName: settings.restaurantName || restaurant.name,
+        restaurantAddress: settings.restaurantAddress || restaurant.address,
+        restaurantPhone: settings.restaurantPhone || restaurant.phone,
+        totalTables: settings.totalTables || restaurant.totalTables,
+        deliveryFeePerKm: settings.deliveryFeePerKm || restaurant.deliveryFeePerKm,
+        whatsappNumber: settings.restaurantPhone || restaurant.phone
       }
     });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+router.post('/settings/restaurant', authMiddleware, async (req, res) => {
+  try {
+    const { restaurantName, restaurantAddress, restaurantPhone, totalTables, deliveryFeePerKm } = req.body;
+    let settings = await Settings.findOne({ type: 'global' });
+    
+    if (!settings) {
+      settings = new Settings({ type: 'global' });
+    }
+
+    if (restaurantName !== undefined) settings.restaurantName = restaurantName.trim();
+    if (restaurantAddress !== undefined) settings.restaurantAddress = restaurantAddress.trim();
+    if (restaurantPhone !== undefined) settings.restaurantPhone = restaurantPhone.trim();
+    if (totalTables !== undefined) settings.totalTables = Number(totalTables);
+    if (deliveryFeePerKm !== undefined) settings.deliveryFeePerKm = Number(deliveryFeePerKm);
+
+    await settings.save();
+    
+    // Update the in-memory env so the bot picks it up immediately
+    if (restaurantName) restaurant.name = restaurantName;
+    if (restaurantPhone) restaurant.phone = restaurantPhone;
+    
+    res.json({ success: true, message: 'Restaurant settings saved successfully to Database' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

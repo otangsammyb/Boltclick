@@ -10,8 +10,16 @@ const Settings = require('../models/Settings');
 let cachedToken = null;
 let tokenExpiry = 0;
 
-// Helper to get unified config (DB overrides ENV)
+// Config cache — avoids repeated DB hits on every API call
+let cachedConfig = null;
+let configExpiry = 0;
+const CONFIG_TTL_MS = 60 * 1000; // 60 seconds
+
+// Helper to get unified config (DB overrides ENV). Cached for 60 s to avoid
+// repeated MongoDB round-trips on every API call.
 async function getCampayConfig() {
+  if (cachedConfig && Date.now() < configExpiry) return cachedConfig;
+
   const config = { ...campay };
   try {
     const settings = await Settings.findOne({ type: 'global' });
@@ -25,6 +33,9 @@ async function getCampayConfig() {
   } catch (err) {
     logger.error('Failed to fetch CamPay settings from DB, falling back to ENV');
   }
+
+  cachedConfig = config;
+  configExpiry = Date.now() + CONFIG_TTL_MS;
   return config;
 }
 
@@ -52,9 +63,10 @@ async function getToken() {
 
 // ── Initiate a collect (debit from customer phone) ──────────────────────────
 async function initiateCollection({ amount, currency = 'XAF', from, description, externalRef }) {
-  const token = await getToken();
+  // Fetch config once — getToken() already uses the same cached value
   const config = await getCampayConfig();
-  
+  const token = await getToken();
+
   const payload = {
     amount: String(amount),
     currency,
@@ -83,9 +95,9 @@ async function initiateCollection({ amount, currency = 'XAF', from, description,
 
 // ── Check transaction status by reference ───────────────────────────────────
 async function checkStatus(reference) {
-  const token = await getToken();
   const config = await getCampayConfig();
-  
+  const token = await getToken();
+
   const res = await axios.get(
     `${config.baseUrl}/transaction/${reference}/`,
     { headers: { Authorization: `Token ${token}` } }
@@ -97,7 +109,10 @@ async function checkStatus(reference) {
 function clearTokenCache() {
   cachedToken = null;
   tokenExpiry = 0;
-  logger.info('CamPay token cache cleared (settings updated)');
+  // Also bust config cache so updated settings take effect immediately
+  cachedConfig = null;
+  configExpiry = 0;
+  logger.info('CamPay token + config cache cleared (settings updated)');
 }
 
 module.exports = { initiateCollection, checkStatus, clearTokenCache };

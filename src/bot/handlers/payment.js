@@ -23,6 +23,12 @@ const FOOTER = 'Powered by BoltClick';
 
 async function handlePaymentStart(phone, lang, session, paymentPhone) {
   const s = strings[lang];
+
+  // Guard: cart must exist and have items
+  if (!session.cart || session.cart.length === 0) {
+    return wa.sendText(phone, s.cartEmpty);
+  }
+
   const carrier = detectCarrier(paymentPhone);
 
   if (carrier === 'UNKNOWN') {
@@ -34,8 +40,8 @@ async function handlePaymentStart(phone, lang, session, paymentPhone) {
   const deliveryFee = session.data?.deliveryFee || 0;
   const total = subtotal + deliveryFee;
 
-  // Create order in DB
-  const user = await User.findOne({ phone });
+  // Get or create user — prevents crash if the user record doesn't exist yet
+  const user = await sm.getOrCreateUser(phone);
   const orderItems = session.cart.map((i) => ({
     menuItemId: i.itemId,
     nameEn: i.nameEn,
@@ -145,55 +151,64 @@ async function handlePaymentConfirmation(phone, lang, session) {
       { new: true }
     );
 
-    // Materialized Stats: status transition PENDING -> PAID (Revenue!)
-    await statsManager.onOrderStatusChange('PENDING', 'PAID', order.total);
-
-    await Transaction.findOneAndUpdate(
-      { orderId: pendingOrderId },
-      { status: 'SUCCESSFUL', campayTransactionId: paymentStatus.operator_tx_id }
-    );
-
-    // Record platform commission (1.5%)
-    try {
-      await Commission.create({
-        orderId: order._id,
-        restaurantPhone: restaurant.phone || '',
-        orderTotal: order.total,
-        commissionRate: COMMISSION_RATE,
-        commissionAmount: order.commissionAmount,
-        status: 'EARNED',
-        earnedAt: new Date(),
-      });
-    } catch (err) {
-      logger.error('Commission recording error: ' + err.message);
-      // Non-fatal — order still proceeds
-    }
-
-    // Update user stats
-    await User.findOneAndUpdate(
-      { phone },
-      { $inc: { totalOrders: 1, totalSpent: order.total }, $set: { lastOrderId: order._id } }
-    );
-
+    // ── Send the success message to the user IMMEDIATELY ─────────────────────
+    // All remaining work (stats, commission, receipt, routing, follow-up) is
+    // deferred to a background task so the user doesn't wait for it.
     await wa.sendText(phone, s.paymentSuccess);
-
-    // Generate & send PDF receipt
-    try {
-      const { fileId, filename } = await generateReceipt(order);
-      const pdfBuffer = await downloadFile(fileId);
-      await wa.sendBufferDocument(phone, pdfBuffer, filename);
-      await Order.findByIdAndUpdate(pendingOrderId, { receiptUrl: `gridfs://${fileId}` });
-    } catch (err) {
-      logger.error('Receipt generation error: ' + err.message);
-    }
-
-    // Smart routing
-    await smartRouting.checkAndGroup(order);
-
-    // Schedule 30-min follow-up
-    await scheduleFollowUp(phone, lang, order);
-
     await sm.resetSession(phone);
+
+    // ── Non-critical background work ──────────────────────────────────────────
+    setImmediate(async () => {
+      try {
+        // Update transaction record
+        await Transaction.findOneAndUpdate(
+          { orderId: pendingOrderId },
+          { status: 'SUCCESSFUL', campayTransactionId: paymentStatus.operator_tx_id }
+        );
+
+        // Materialized Stats: status transition PENDING -> PAID (Revenue!)
+        await statsManager.onOrderStatusChange('PENDING', 'PAID', order.total);
+
+        // Record platform commission (1.5%)
+        try {
+          await Commission.create({
+            orderId: order._id,
+            restaurantPhone: restaurant.phone || '',
+            orderTotal: order.total,
+            commissionRate: COMMISSION_RATE,
+            commissionAmount: order.commissionAmount,
+            status: 'EARNED',
+            earnedAt: new Date(),
+          });
+        } catch (err) {
+          logger.error('Commission recording error: ' + err.message);
+        }
+
+        // Update user stats
+        await User.findOneAndUpdate(
+          { phone },
+          { $inc: { totalOrders: 1, totalSpent: order.total }, $set: { lastOrderId: order._id } }
+        );
+
+        // Generate & send PDF receipt
+        try {
+          const { fileId, filename } = await generateReceipt(order);
+          const pdfBuffer = await downloadFile(fileId);
+          await wa.sendBufferDocument(phone, pdfBuffer, filename);
+          await Order.findByIdAndUpdate(pendingOrderId, { receiptUrl: `gridfs://${fileId}` });
+        } catch (err) {
+          logger.error('Receipt generation error: ' + err.message);
+        }
+
+        // Smart routing
+        await smartRouting.checkAndGroup(order);
+
+        // Schedule 30-min follow-up
+        await scheduleFollowUp(phone, lang, order);
+      } catch (bgErr) {
+        logger.error('Background post-payment error: ' + bgErr.message);
+      }
+    });
   } else {
     await wa.sendButtons(phone, s.paymentFailed, [
       { id: 'PAY_RETRY', title: s.btnRetry },

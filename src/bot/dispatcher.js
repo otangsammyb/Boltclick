@@ -95,7 +95,9 @@ async function dispatch(body) {
     'home', 'accueil',
   ];
 
-  if (RESET_WORDS.includes(lowerText)) {
+  // Global cancel / restart / stop keywords — work from ANY state
+  // Only applies to plain text messages (empty string means the user tapped a button)
+  if (lowerText && RESET_WORDS.includes(lowerText)) {
     await sm.resetSession(phone);
     return showMainMenu(phone, lang);
   }
@@ -147,8 +149,8 @@ async function dispatch(body) {
         const freshSession = await sm.getSession(phone);
         return handleCheckout(phone, lang, freshSession);
       }
-      // User typed text — re-show the menu so they can pick an item
-      return showMenu(phone, lang);
+      // User typed text instead of selecting from menu
+      return wa.sendText(phone, s.invalidInput);
 
     case 'DELIVERY_CHOICE':
       if (buttonId === 'FULFILL_DELIVERY' || buttonId === 'FULFILL_PICKUP' || buttonId === 'FULFILL_IN_RESTAURANT') {
@@ -167,7 +169,7 @@ async function dispatch(body) {
       return wa.sendText(phone, s.askTableNumber);
 
     case 'PAYMENT_NUMBER':
-      if (text) return handlePaymentStart(phone, lang, session, text);
+      if (text && text.trim()) return handlePaymentStart(phone, lang, session, text.trim());
       return wa.sendText(phone, s.askPaymentNumber);
 
     case 'AWAITING_PAYMENT_CONFIRM':

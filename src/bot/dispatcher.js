@@ -83,25 +83,35 @@ async function dispatch(body) {
   const state = session.state || 'IDLE';
   const s = strings[lang];
 
-  // Global cancel / restart keywords
-  const lowerText = text.toLowerCase();
-  
-  // Quick Table Order pattern: "Order for Table X" or "Commande pour la table X"
-  const tableOrderMatch = lowerText.match(/^order for table\s+(\d+)$/i) || lowerText.match(/^commande pour la table\s+(\d+)$/i);
+  // Global cancel / restart / stop keywords — work from ANY state
+  const RESET_WORDS = [
+    'cancel', 'annuler',
+    'menu',
+    'start', 'restart', 'début', 'recommencer',
+    'stop', 'arrêter', 'arreter',
+    'end', 'fin',
+    'quit', 'quitter',
+    'home', 'accueil',
+  ];
+
+  if (RESET_WORDS.includes(lowerText)) {
+    await sm.resetSession(phone);
+    return showMainMenu(phone, lang);
+  }
+
+  // Quick Table Order shortcut: "Order for Table X" / "Commande pour la table X"
+  const tableOrderMatch =
+    lowerText.match(/^order for table\s+(\d+)$/i) ||
+    lowerText.match(/^commande pour la table\s+(\d+)$/i);
   if (tableOrderMatch) {
     const tableNum = tableOrderMatch[1];
     await sm.clearCart(phone);
-    await sm.updateSession(phone, { 
-      state: 'ORDERING', 
+    await sm.updateSession(phone, {
+      state: 'ORDERING',
       'data.deliveryChoice': 'in_restaurant',
-      'data.tableNumber': tableNum
+      'data.tableNumber': tableNum,
     });
     return showMenu(phone, lang);
-  }
-
-  if (['cancel', 'menu', 'annuler', 'début', 'start', 'restart'].includes(lowerText) && state !== 'IDLE') {
-    await sm.resetSession(phone);
-    return showMainMenu(phone, lang);
   }
 
   // --- Route by state ---
@@ -124,7 +134,8 @@ async function dispatch(body) {
       if (buttonId === 'MENU_BOOK') return handleBookingStart(phone, lang);
       if (buttonId === 'MENU_USUAL') return handleTheUsual(phone, lang);
       if (buttonId === 'MENU_HUMAN') return handleHandoff(phone, lang);
-      return wa.sendText(phone, s.invalidInput);
+      // User typed instead of tapping a button — re-show the main menu
+      return showMainMenu(phone, lang);
 
     case 'ORDERING':
       if (listId && listId.startsWith('ITEM_')) {
@@ -136,13 +147,15 @@ async function dispatch(body) {
         const freshSession = await sm.getSession(phone);
         return handleCheckout(phone, lang, freshSession);
       }
-      return wa.sendText(phone, s.invalidInput);
+      // User typed text — re-show the menu so they can pick an item
+      return showMenu(phone, lang);
 
     case 'DELIVERY_CHOICE':
       if (buttonId === 'FULFILL_DELIVERY' || buttonId === 'FULFILL_PICKUP' || buttonId === 'FULFILL_IN_RESTAURANT') {
         return handleDeliveryChoice(phone, lang, buttonId);
       }
-      return wa.sendText(phone, s.invalidInput);
+      // Re-send checkout prompt so user can tap the right button
+      return handleCheckout(phone, lang, session);
 
     case 'AWAITING_LOCATION':
       if (type === 'location' && location) {
@@ -168,7 +181,12 @@ async function dispatch(body) {
         await sm.updateSession(phone, { state: 'PAYMENT_NUMBER' });
         return wa.sendText(phone, s.askPaymentNumber);
       }
-      return wa.sendText(phone, s.invalidInput);
+      // Re-send payment confirmation prompt so user knows what to tap
+      await wa.sendButtons(phone, s.paymentFailed, [
+        { id: 'PAY_CONFIRM', title: s.btnPaid },
+        { id: 'PAY_CANCEL', title: s.btnCancel },
+      ], { footerText: 'Powered by BoltClick' });
+      break;
 
     case 'BOOKING_DATE':
       return handleBookingDate(phone, lang, text);
@@ -185,6 +203,7 @@ async function dispatch(body) {
         await sm.resetSession(phone);
         return showMainMenu(phone, lang);
       }
+      // Re-send booking confirm prompt
       return wa.sendText(phone, s.invalidInput);
 
     case 'THE_USUAL':
